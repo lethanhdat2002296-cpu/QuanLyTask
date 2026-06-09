@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessTask } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
-import { serverError } from "@/lib/api";
+import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES } from "@/lib/constants";
 
 export const runtime = "nodejs";
@@ -24,6 +24,8 @@ export async function PUT(request, { params }) {
     const question = body.question ?? "";
     const customer_answer = body.customer_answer ?? "";
     const solution = body.solution ?? "";
+    const end_date = normalizeDate(body.end_date);
+    const doc_link = normalizeLink(body.doc_link);
     let status = body.status || DEFAULT_STATUS;
     if (!TASK_STATUSES.includes(status)) status = DEFAULT_STATUS;
 
@@ -41,9 +43,12 @@ export async function PUT(request, { params }) {
           customer_answer = ${customer_answer},
           solution = ${solution},
           status = ${status},
+          end_date = ${end_date},
+          doc_link = ${doc_link},
           updated_at = now()
       WHERE id = ${id}
-      RETURNING *
+      RETURNING id, project_id, customer_task, question, customer_answer, solution,
+                status, doc_link, end_date::text AS end_date, created_at, updated_at
     `;
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
@@ -71,7 +76,8 @@ export async function PATCH(request, { params }) {
       UPDATE tasks
       SET status = ${status}, updated_at = now()
       WHERE id = ${id}
-      RETURNING *
+      RETURNING id, project_id, customer_task, question, customer_answer, solution,
+                status, doc_link, end_date::text AS end_date, created_at, updated_at
     `;
     return NextResponse.json({ task: rows[0] });
   } catch (e) {

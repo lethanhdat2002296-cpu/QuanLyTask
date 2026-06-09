@@ -57,10 +57,14 @@ async function main() {
       customer_answer TEXT NOT NULL DEFAULT '',
       solution TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'Mới',
+      end_date DATE,
+      doc_link TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS end_date DATE`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS doc_link TEXT NOT NULL DEFAULT ''`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS password_reset_tokens (

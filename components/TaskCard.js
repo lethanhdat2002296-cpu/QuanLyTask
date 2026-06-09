@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { TASK_STATUSES, STATUS_COLORS } from "@/lib/constants";
 
+function fmtDate(v) {
+  if (!v) return "";
+  const s = String(v);
+  // Chuỗi ngày thuần YYYY-MM-DD -> hiểu là ngày địa phương (tránh lệch múi giờ).
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s);
+  return isNaN(d.getTime()) ? s : d.toLocaleDateString("vi-VN");
+}
+
 function Child({ color, icon, label, value }) {
   return (
     <div className="child">
@@ -46,6 +55,22 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
 
       {open && (
         <div className="task-detail">
+          <div className="task-meta">
+            <span className="pill">🗓️ Tạo: {fmtDate(task.created_at)}</span>
+            {task.end_date && (
+              <span className="pill">🏁 Kết thúc: {fmtDate(task.end_date)}</span>
+            )}
+            {task.doc_link && (
+              <a
+                className="pill pill-link"
+                href={task.doc_link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📎 Tài liệu
+              </a>
+            )}
+          </div>
           <span className="parent-tag">📋 Task khách hàng</span>
           <div className={"parent-body" + (isLong && !expanded ? " clamp" : "")}>
             {text}

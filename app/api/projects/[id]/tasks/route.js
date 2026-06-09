@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessProject } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
-import { serverError } from "@/lib/api";
+import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES } from "@/lib/constants";
 
 export const runtime = "nodejs";
@@ -20,7 +20,9 @@ export async function GET(_request, { params }) {
       return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
     }
     const rows = await sql`
-      SELECT * FROM tasks
+      SELECT id, project_id, customer_task, question, customer_answer, solution,
+             status, doc_link, end_date::text AS end_date, created_at, updated_at
+      FROM tasks
       WHERE project_id = ${projectId}
       ORDER BY created_at DESC
     `;
@@ -47,6 +49,8 @@ export async function POST(request, { params }) {
     const question = body.question || "";
     const customer_answer = body.customer_answer || "";
     const solution = body.solution || "";
+    const end_date = normalizeDate(body.end_date);
+    const doc_link = normalizeLink(body.doc_link);
     let status = body.status || DEFAULT_STATUS;
     if (!TASK_STATUSES.includes(status)) status = DEFAULT_STATUS;
 
@@ -58,9 +62,10 @@ export async function POST(request, { params }) {
     }
 
     const rows = await sql`
-      INSERT INTO tasks (project_id, customer_task, question, customer_answer, solution, status)
-      VALUES (${projectId}, ${customer_task}, ${question}, ${customer_answer}, ${solution}, ${status})
-      RETURNING *
+      INSERT INTO tasks (project_id, customer_task, question, customer_answer, solution, status, end_date, doc_link)
+      VALUES (${projectId}, ${customer_task}, ${question}, ${customer_answer}, ${solution}, ${status}, ${end_date}, ${doc_link})
+      RETURNING id, project_id, customer_task, question, customer_answer, solution,
+                status, doc_link, end_date::text AS end_date, created_at, updated_at
     `;
     return NextResponse.json({ task: rows[0] }, { status: 201 });
   } catch (e) {

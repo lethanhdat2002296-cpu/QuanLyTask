@@ -11,6 +11,8 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
     customer_answer: task?.customer_answer || "",
     solution: task?.solution || "",
     status: task?.status || DEFAULT_STATUS,
+    end_date: (task?.end_date || "").slice(0, 10),
+    doc_link: task?.doc_link || "",
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -103,6 +105,25 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="field">
+            <label>Ngày kết thúc</label>
+            <input
+              className="input"
+              type="date"
+              value={form.end_date}
+              onChange={(e) => set("end_date", e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label>Link tài liệu</label>
+            <input
+              className="input"
+              type="url"
+              value={form.doc_link}
+              onChange={(e) => set("doc_link", e.target.value)}
+              placeholder="https://drive.google.com/... (không bắt buộc)"
+            />
           </div>
           <div className="modal-actions">
             <button type="button" className="btn" onClick={onClose}>
