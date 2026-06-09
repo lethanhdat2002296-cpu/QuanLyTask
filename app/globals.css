@@ -282,9 +282,97 @@ a {
 .task-actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* ---------- Task: cấu trúc Cha → Con ---------- */
+.parent-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 5px 11px;
+  border-radius: 7px;
+}
+.parent-body {
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 12px 0 2px;
+  color: #1f2937;
+}
+.parent-body.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+.children {
+  margin-top: 16px;
+  padding-left: 20px;
+  border-left: 2px solid #e5e9f2;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.child {
+  position: relative;
+}
+.child::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 11px;
+  width: 14px;
+  height: 2px;
+  background: #e5e9f2;
+}
+.child-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.child-value {
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 10px 13px;
+}
+.child-value.empty {
+  color: #b0b7c3;
+  font-style: italic;
 }
 
 /* ---------- Misc ---------- */

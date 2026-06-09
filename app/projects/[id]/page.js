@@ -4,18 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Topbar from "@/components/Topbar";
 import TaskModal from "@/components/TaskModal";
-import { TASK_STATUSES, STATUS_COLORS } from "@/lib/constants";
-
-function Block({ label, value }) {
-  return (
-    <div className="block">
-      <div className="label">{label}</div>
-      <div className={"value" + (value ? "" : " empty")}>
-        {value || "—"}
-      </div>
-    </div>
-  );
-}
+import TaskCard from "@/components/TaskCard";
+import { TASK_STATUSES } from "@/lib/constants";
 
 export default function ProjectDetailPage({ params }) {
   const router = useRouter();
@@ -150,51 +140,13 @@ export default function ProjectDetailPage({ params }) {
               </div>
             ) : (
               visibleTasks.map((t) => (
-                <div className="task" key={t.id}>
-                  <div className="task-head">
-                    <div className="task-title">{t.customer_task}</div>
-                    <span
-                      className="badge"
-                      style={{
-                        background: STATUS_COLORS[t.status] || "#6b7280",
-                      }}
-                    >
-                      {t.status}
-                    </span>
-                  </div>
-                  <div className="task-grid">
-                    <Block label="Đặt câu hỏi" value={t.question} />
-                    <Block label="Khách trả lời" value={t.customer_answer} />
-                    <Block label="Giải pháp" value={t.solution} />
-                  </div>
-                  <div className="task-actions">
-                    <span className="muted" style={{ fontSize: 13 }}>
-                      Đổi trạng thái:
-                    </span>
-                    <select
-                      className="select"
-                      style={{ width: "auto" }}
-                      value={t.status}
-                      onChange={(e) => changeStatus(t.id, e.target.value)}
-                    >
-                      {TASK_STATUSES.map((s) => (
-                        <option key={s}>{s}</option>
-                      ))}
-                    </select>
-                    <button
-                      className="btn btn-sm"
-                      onClick={() => openEdit(t)}
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => deleteTask(t.id)}
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                </div>
+                <TaskCard
+                  key={t.id}
+                  task={t}
+                  onEdit={openEdit}
+                  onDelete={deleteTask}
+                  onStatusChange={changeStatus}
+                />
               ))
             )}
           </>
