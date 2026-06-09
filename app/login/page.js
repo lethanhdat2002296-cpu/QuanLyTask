@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -70,6 +71,17 @@ export default function LoginPage() {
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
+        <div className="auth-links">
+          <Link className="link" href="/forgot-password">
+            Quên mật khẩu?
+          </Link>
+          <span>
+            Chưa có tài khoản?{" "}
+            <Link className="link" href="/register">
+              Đăng ký
+            </Link>
+          </span>
+        </div>
       </div>
     </div>
   );

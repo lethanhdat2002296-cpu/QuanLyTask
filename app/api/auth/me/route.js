@@ -9,5 +9,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
   }
-  return NextResponse.json({ user: { id: user.sub, username: user.username } });
+  return NextResponse.json({
+    user: { id: Number(user.sub), username: user.username },
+  });
 }

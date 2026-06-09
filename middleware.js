@@ -4,10 +4,21 @@ import { jwtVerify } from "jose";
 const COOKIE_NAME = "qlt_session";
 
 // Các đường dẫn không cần đăng nhập
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+];
 
 function getSecret() {
-  return new TextEncoder().encode(process.env.JWT_SECRET || "");
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("Thiếu JWT_SECRET");
+  return new TextEncoder().encode(secret);
 }
 
 async function isValid(token) {
