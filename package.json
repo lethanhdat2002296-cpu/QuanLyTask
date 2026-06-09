@@ -1,0 +1,24 @@
+{
+  "name": "quanlytask",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web quản lý task / dự án - khách hàng, câu hỏi, trả lời, giải pháp, trạng thái",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "init-db": "node scripts/init-db.mjs",
+    "create-user": "node scripts/create-user.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.6",
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
