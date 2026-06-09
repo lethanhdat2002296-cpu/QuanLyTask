@@ -237,8 +237,53 @@ a {
   border-radius: var(--radius);
   background: var(--card);
   box-shadow: var(--shadow);
-  padding: 16px 18px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.12s ease;
+}
+.task.task-open {
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.1);
+}
+
+/* Header thu gọn — bấm để mở/đóng chi tiết */
+.task-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.task-header:hover {
+  background: #f8fafc;
+}
+.task-chevron {
+  color: var(--muted);
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 12px;
+}
+.task-preview {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+.task-detail {
+  padding: 4px 18px 18px;
+  border-top: 1px solid var(--border);
+}
+.task-detail .parent-tag {
+  margin-top: 14px;
 }
 .task-head {
   display: flex;
