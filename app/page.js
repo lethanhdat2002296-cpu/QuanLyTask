@@ -7,6 +7,7 @@ import Topbar from "@/components/Topbar";
 export default function DashboardPage() {
   const router = useRouter();
   const [projects, setProjects] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -24,6 +25,7 @@ export default function DashboardPage() {
       }
       const data = await res.json();
       setProjects(data.projects || []);
+      setIsAdmin(Boolean(data.isAdmin));
     } catch {
       setError("Không tải được danh sách dự án");
     } finally {
@@ -73,7 +75,9 @@ export default function DashboardPage() {
       <Topbar />
       <div className="container">
         <div className="row-between" style={{ marginBottom: 22 }}>
-          <h1 className="page-title">Dự án của bạn</h1>
+          <h1 className="page-title">
+            {isAdmin ? "Tất cả dự án (admin)" : "Dự án của bạn"}
+          </h1>
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>
             + Tạo dự án
           </button>
@@ -98,6 +102,11 @@ export default function DashboardPage() {
               >
                 <div className="row-between">
                   <h3>{p.name}</h3>
+                  {isAdmin && p.owner_username && (
+                    <span className="pill" title="Chủ sở hữu">
+                      👤 {p.owner_username}
+                    </span>
+                  )}
                 </div>
                 <div className="desc">{p.description || "Không có mô tả"}</div>
                 <div className="row-between" style={{ marginTop: 6 }}>

@@ -370,6 +370,30 @@ a {
   color: #15803d;
 }
 
+/* ---------- Table ---------- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.table th,
+.table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  background: #f8fafc;
+}
+.table tr:last-child td {
+  border-bottom: none;
+}
+
 @media (max-width: 640px) {
   .task-grid {
     grid-template-columns: 1fr;

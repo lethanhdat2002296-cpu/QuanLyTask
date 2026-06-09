@@ -1,6 +1,6 @@
-// Tạo (hoặc đặt lại mật khẩu) tài khoản đăng nhập.
-// Chạy: npm run create-user -- <tên_đăng_nhập> <mật_khẩu> [email]
-// Ví dụ: npm run create-user -- admin MatKhau123 admin@example.com
+// Tạo (hoặc nâng cấp) một tài khoản ADMIN toàn quyền.
+// Chạy: npm run create-admin -- <tên_đăng_nhập> <mật_khẩu> [email]
+// Ví dụ: npm run create-admin -- admin MatKhauManh123 admin@example.com
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 
@@ -18,14 +18,13 @@ if (!url) {
 
 const [username, password, email] = process.argv.slice(2);
 if (!username || !password) {
-  console.error("Cách dùng: npm run create-user -- <tên_đăng_nhập> <mật_khẩu> [email]");
+  console.error("Cách dùng: npm run create-admin -- <tên_đăng_nhập> <mật_khẩu> [email]");
   process.exit(1);
 }
 
 const sql = neon(url);
 
 async function main() {
-  // Đảm bảo bảng users đã tồn tại + có cột email, token_version
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -43,16 +42,15 @@ async function main() {
 
   const hash = await bcrypt.hash(password, 10);
   await sql`
-    INSERT INTO users (username, password_hash, email)
-    VALUES (${username}, ${hash}, ${email ? email.toLowerCase() : null})
+    INSERT INTO users (username, password_hash, email, is_admin)
+    VALUES (${username}, ${hash}, ${email ? email.toLowerCase() : null}, true)
     ON CONFLICT (username)
     DO UPDATE SET password_hash = EXCLUDED.password_hash,
                   email = COALESCE(EXCLUDED.email, users.email),
+                  is_admin = true,
                   token_version = users.token_version + 1
   `;
-  console.log(
-    `✅ Đã tạo/cập nhật tài khoản: ${username}${email ? " (email: " + email + ")" : ""}`
-  );
+  console.log(`✅ Đã tạo/nâng cấp ADMIN: ${username}${email ? " (email: " + email + ")" : ""}`);
 }
 
 main().catch((e) => {

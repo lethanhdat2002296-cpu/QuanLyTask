@@ -1,26 +1,23 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema, userOwnsProject } from "@/lib/db";
-import { getCurrentUserId } from "@/lib/auth";
+import { sql, ensureSchema, canAccessProject } from "@/lib/db";
+import { getAuth } from "@/lib/auth";
 import { serverError } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Danh sách task của 1 dự án (chỉ khi dự án thuộc về mình)
+// Danh sách task của 1 dự án (admin xem được mọi dự án)
 export async function GET(_request, { params }) {
   try {
     await ensureSchema();
-    const userId = await getCurrentUserId();
-    if (!userId) {
+    const auth = await getAuth();
+    if (!auth) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const projectId = Number(params.id);
-    if (!(await userOwnsProject(projectId, userId))) {
-      return NextResponse.json(
-        { error: "Không tìm thấy dự án" },
-        { status: 404 }
-      );
+    if (!(await canAccessProject(projectId, auth))) {
+      return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
     }
     const rows = await sql`
       SELECT * FROM tasks
@@ -29,25 +26,21 @@ export async function GET(_request, { params }) {
     `;
     return NextResponse.json({ tasks: rows });
   } catch (e) {
-    console.error("List tasks error:", e);
     return serverError(e);
   }
 }
 
-// Tạo task mới trong dự án (chỉ khi dự án thuộc về mình)
+// Tạo task mới trong dự án (admin thêm được vào mọi dự án)
 export async function POST(request, { params }) {
   try {
     await ensureSchema();
-    const userId = await getCurrentUserId();
-    if (!userId) {
+    const auth = await getAuth();
+    if (!auth) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const projectId = Number(params.id);
-    if (!(await userOwnsProject(projectId, userId))) {
-      return NextResponse.json(
-        { error: "Không tìm thấy dự án" },
-        { status: 404 }
-      );
+    if (!(await canAccessProject(projectId, auth))) {
+      return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
     }
     const body = await request.json();
     const customer_task = (body.customer_task || "").trim();
@@ -71,7 +64,6 @@ export async function POST(request, { params }) {
     `;
     return NextResponse.json({ task: rows[0] }, { status: 201 });
   } catch (e) {
-    console.error("Create task error:", e);
     return serverError(e);
   }
 }

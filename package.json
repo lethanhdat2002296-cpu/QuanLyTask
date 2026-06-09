@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "init-db": "node scripts/init-db.mjs",
-    "create-user": "node scripts/create-user.mjs"
+    "create-user": "node scripts/create-user.mjs",
+    "create-admin": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

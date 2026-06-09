@@ -1,26 +1,23 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema, userOwnsTask } from "@/lib/db";
-import { getCurrentUserId } from "@/lib/auth";
+import { sql, ensureSchema, canAccessTask } from "@/lib/db";
+import { getAuth } from "@/lib/auth";
 import { serverError } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Cập nhật 1 task (chỉ khi task thuộc dự án của mình)
+// Cập nhật 1 task (admin sửa được mọi task)
 export async function PUT(request, { params }) {
   try {
     await ensureSchema();
-    const userId = await getCurrentUserId();
-    if (!userId) {
+    const auth = await getAuth();
+    if (!auth) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const id = Number(params.id);
-    if (!(await userOwnsTask(id, userId))) {
-      return NextResponse.json(
-        { error: "Không tìm thấy task" },
-        { status: 404 }
-      );
+    if (!(await canAccessTask(id, auth))) {
+      return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
     }
     const body = await request.json();
     const customer_task = (body.customer_task ?? "").trim();
@@ -50,7 +47,6 @@ export async function PUT(request, { params }) {
     `;
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
-    console.error("Update task error:", e);
     return serverError(e);
   }
 }
@@ -59,23 +55,17 @@ export async function PUT(request, { params }) {
 export async function PATCH(request, { params }) {
   try {
     await ensureSchema();
-    const userId = await getCurrentUserId();
-    if (!userId) {
+    const auth = await getAuth();
+    if (!auth) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const id = Number(params.id);
-    if (!(await userOwnsTask(id, userId))) {
-      return NextResponse.json(
-        { error: "Không tìm thấy task" },
-        { status: 404 }
-      );
+    if (!(await canAccessTask(id, auth))) {
+      return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
     }
     const { status } = await request.json();
     if (!TASK_STATUSES.includes(status)) {
-      return NextResponse.json(
-        { error: "Trạng thái không hợp lệ" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Trạng thái không hợp lệ" }, { status: 400 });
     }
     const rows = await sql`
       UPDATE tasks
@@ -85,30 +75,25 @@ export async function PATCH(request, { params }) {
     `;
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
-    console.error("Patch task error:", e);
     return serverError(e);
   }
 }
 
-// Xóa task (chỉ khi task thuộc dự án của mình)
+// Xóa task (admin xóa được mọi task)
 export async function DELETE(_request, { params }) {
   try {
     await ensureSchema();
-    const userId = await getCurrentUserId();
-    if (!userId) {
+    const auth = await getAuth();
+    if (!auth) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const id = Number(params.id);
-    if (!(await userOwnsTask(id, userId))) {
-      return NextResponse.json(
-        { error: "Không tìm thấy task" },
-        { status: 404 }
-      );
+    if (!(await canAccessTask(id, auth))) {
+      return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
     }
     await sql`DELETE FROM tasks WHERE id = ${id}`;
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("Delete task error:", e);
     return serverError(e);
   }
 }

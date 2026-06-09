@@ -16,6 +16,7 @@ Tính năng tài khoản:
 - **Đăng ký** tài khoản mới (cần **mã mời** bí mật)
 - **Quên mật khẩu** – gửi link đặt lại qua email
 - **Dữ liệu riêng từng người** – mỗi người chỉ thấy dự án/task của mình
+- **Admin toàn quyền** – xem/sửa/xóa mọi dữ liệu + quản lý người dùng (trang `/admin`)
 
 ---
 
@@ -78,6 +79,16 @@ Có 2 cách:
   npm run create-user -- admin MatKhau123 admin@example.com
   ```
   Chạy lại với cùng tên đăng nhập sẽ **đặt lại mật khẩu** (và thu hồi các phiên cũ).
+
+- **Tạo tài khoản ADMIN** (toàn quyền):
+  ```bash
+  npm run create-admin -- <tên_đăng_nhập> <mật_khẩu> [email]
+  # Ví dụ:
+  npm run create-admin -- admin MatKhauManh123 admin@example.com
+  ```
+  Admin đăng nhập sẽ thấy nút **"Quản trị"** trên thanh trên cùng → trang `/admin`:
+  xem **tất cả dự án/task của mọi người**, và quản lý người dùng (đặt lại mật khẩu,
+  cấp/bỏ quyền admin, xóa). Không thể tự xóa hay tự bỏ quyền của chính mình.
 
 ## 5. Chạy ở máy (local)
 
