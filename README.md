@@ -18,6 +18,11 @@ Tính năng tài khoản:
 - **Dữ liệu riêng từng người** – mỗi người chỉ thấy dự án/task của mình
 - **Admin toàn quyền** – xem/sửa/xóa mọi dữ liệu + quản lý người dùng (trang `/admin`)
 
+**Gợi ý AI (tùy chọn):** mỗi dự án có ô **Tài liệu tham khảo** (dán văn bản). Khi tạo/sửa task,
+bấm **"✨ Gợi ý bằng AI"** để Google Gemini đọc tài liệu + nội dung task rồi đề xuất **độ ưu tiên**,
+**giải pháp** và **câu hỏi cần làm rõ** (điền sẵn vào form để bạn xem/sửa trước khi lưu). Cần `GEMINI_API_KEY`
+(lấy miễn phí tại https://aistudio.google.com); thiếu key thì nút báo "chưa cấu hình".
+
 ---
 
 ## 1. Cài đặt
@@ -42,6 +47,9 @@ SMTP_PORT="587"
 SMTP_USER="email-cua-ban@gmail.com"
 SMTP_PASS="app-password-16-ky-tu"
 SMTP_FROM="Quản Lý Task <email-cua-ban@gmail.com>"
+
+# (Tùy chọn) Tính năng "Gợi ý AI" khi tạo task — dùng Google Gemini (bậc miễn phí)
+GEMINI_API_KEY="..."
 ```
 
 | Biến | Bắt buộc | Ý nghĩa |
@@ -51,6 +59,7 @@ SMTP_FROM="Quản Lý Task <email-cua-ban@gmail.com>"
 | `INVITE_CODE` | ✅ (để bật đăng ký) | Mã bí mật, ai biết mới đăng ký được |
 | `APP_URL` | nên có | URL gốc để tạo link trong email (an toàn hơn header) |
 | `SMTP_*` | cho quên mật khẩu | Cấu hình gửi email; thiếu thì chức năng quên MK báo "chưa cấu hình" |
+| `GEMINI_API_KEY` | cho "Gợi ý AI" | Key Google Gemini; thiếu thì nút "Gợi ý AI" báo "chưa cấu hình" |
 
 > Tạo `JWT_SECRET` ngẫu nhiên:
 > ```bash
@@ -104,7 +113,7 @@ Mở http://localhost:3000 → đăng nhập hoặc đăng ký.
 
 1. Đẩy code lên GitHub (đã làm sẵn).
 2. Vào https://vercel.com → **Add New → Project** → chọn repo `QuanLyTask`.
-3. Ở mục **Environment Variables**, thêm các biến ở bảng trên (ít nhất `DATABASE_URL`, `JWT_SECRET`, `INVITE_CODE`; đặt `APP_URL` = URL Vercel của bạn; thêm `SMTP_*` nếu cần quên mật khẩu).
+3. Ở mục **Environment Variables**, thêm các biến ở bảng trên (ít nhất `DATABASE_URL`, `JWT_SECRET`, `INVITE_CODE`; đặt `APP_URL` = URL Vercel của bạn; thêm `SMTP_*` nếu cần quên mật khẩu; thêm `GEMINI_API_KEY` nếu muốn dùng "Gợi ý AI").
 4. Bấm **Deploy**.
 5. Tài khoản đăng ký trên web (cùng database Neon) dùng được cả local và online.
 

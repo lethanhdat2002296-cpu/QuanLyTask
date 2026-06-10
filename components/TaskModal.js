@@ -35,9 +35,51 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [aiHint, setAiHint] = useState("");
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  // Nhờ AI (Gemini) gợi ý ưu tiên + giải pháp dựa trên tài liệu tham khảo dự án.
+  async function aiSuggest() {
+    const pid = projectId || task?.project_id;
+    if (!pid) {
+      setError("Không xác định được dự án để gợi ý.");
+      return;
+    }
+    setSuggesting(true);
+    setError("");
+    setAiHint("");
+    try {
+      const res = await fetch(`/api/projects/${pid}/ai-suggest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          customer_task: form.customer_task,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Không gợi ý được, thử lại sau.");
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        priority: [1, 2, 3].includes(Number(data.priority))
+          ? Number(data.priority)
+          : f.priority,
+        solution: data.solution || f.solution,
+        question: data.questions || f.question,
+      }));
+      setAiHint(data.priorityReason || "");
+    } catch {
+      setError("Không gợi ý được, thử lại sau.");
+    } finally {
+      setSuggesting(false);
+    }
   }
 
   async function submit(e) {
@@ -74,6 +116,37 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
         <h2>{isEdit ? "Sửa task" : "Thêm task mới"}</h2>
         {error && <div className="alert">{error}</div>}
         <form onSubmit={submit}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: 14,
+              padding: "10px 12px",
+              background: "#eef2ff",
+              border: "1px solid #c7d2fe",
+              borderRadius: 10,
+            }}
+          >
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={aiSuggest}
+              disabled={suggesting || saving}
+              style={{
+                background: "#4f46e5",
+                color: "#fff",
+                borderColor: "#4f46e5",
+              }}
+            >
+              {suggesting ? "Đang gợi ý..." : "✨ Gợi ý bằng AI"}
+            </button>
+            <span className="muted" style={{ fontSize: 13 }}>
+              Điền tiêu đề/nội dung rồi bấm để AI đề xuất ưu tiên + giải pháp
+              (dựa trên tài liệu dự án).
+            </span>
+          </div>
           <div className="field">
             <label>Tiêu đề task * (ngắn gọn, hiện trong danh sách)</label>
             <input
@@ -148,6 +221,11 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
                 </option>
               ))}
             </select>
+            {aiHint && (
+              <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+                💡 Lý do AI gợi ý: {aiHint}
+              </p>
+            )}
           </div>
           <div className="field">
             <label>Ngày hết hạn</label>

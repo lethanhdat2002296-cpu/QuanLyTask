@@ -18,6 +18,10 @@ export default function ProjectDetailPage({ params }) {
   const [modalTask, setModalTask] = useState(null); // task đang sửa
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState("Tất cả");
+  const [refDocs, setRefDocs] = useState(""); // tài liệu tham khảo dự án
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [savingDocs, setSavingDocs] = useState(false);
+  const [docsMsg, setDocsMsg] = useState("");
 
   async function load() {
     setLoading(true);
@@ -38,6 +42,7 @@ export default function ProjectDetailPage({ params }) {
       const pData = await pRes.json();
       const tData = await tRes.json();
       setProject(pData.project);
+      setRefDocs(pData.project?.reference_docs || "");
       setTasks(tData.tasks || []);
     } catch {
       setError("Không tải được dữ liệu");
@@ -80,6 +85,34 @@ export default function ProjectDetailPage({ params }) {
     load();
   }
 
+  async function saveDocs() {
+    if (!project) return;
+    setSavingDocs(true);
+    setDocsMsg("");
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: project.name,
+          description: project.description || "",
+          reference_docs: refDocs,
+        }),
+      });
+      if (res.ok) {
+        setProject((p) => ({ ...p, reference_docs: refDocs }));
+        setDocsMsg("Đã lưu tài liệu ✓");
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setDocsMsg(d.error || "Lưu thất bại");
+      }
+    } catch {
+      setDocsMsg("Lưu thất bại");
+    } finally {
+      setSavingDocs(false);
+    }
+  }
+
   const visibleTasks =
     filter === "Tất cả" ? tasks : tasks.filter((t) => t.status === filter);
 
@@ -111,6 +144,62 @@ export default function ProjectDetailPage({ params }) {
               <button className="btn btn-primary" onClick={openCreate}>
                 + Thêm task
               </button>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 10,
+                padding: 14,
+                marginBottom: 16,
+                background: "#fff",
+              }}
+            >
+              <button
+                className="link-btn"
+                onClick={() => setDocsOpen((o) => !o)}
+                style={{ fontWeight: 600 }}
+              >
+                {docsOpen ? "▾" : "▸"} 📚 Tài liệu tham khảo dự án{" "}
+                <span
+                  className="muted"
+                  style={{ fontWeight: 400, fontSize: 13 }}
+                >
+                  (AI dùng làm ngữ cảnh khi gợi ý task)
+                </span>
+              </button>
+              {docsOpen && (
+                <div style={{ marginTop: 10 }}>
+                  <textarea
+                    className="textarea"
+                    style={{ minHeight: 160 }}
+                    value={refDocs}
+                    onChange={(e) => setRefDocs(e.target.value)}
+                    placeholder="Dán tài liệu / quy trình / yêu cầu của dự án (SAP, Odoo, ghi chú nghiệp vụ...) để AI hiểu ngữ cảnh và gợi ý sát hơn."
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginTop: 8,
+                    }}
+                  >
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={saveDocs}
+                      disabled={savingDocs}
+                    >
+                      {savingDocs ? "Đang lưu..." : "Lưu tài liệu"}
+                    </button>
+                    {docsMsg && (
+                      <span className="muted" style={{ fontSize: 13 }}>
+                        {docsMsg}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="row-between" style={{ marginBottom: 16 }}>

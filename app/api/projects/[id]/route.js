@@ -36,17 +36,22 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const id = Number(params.id);
-    const { name, description } = await request.json();
+    const { name, description, reference_docs } = await request.json();
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Vui lòng nhập tên dự án" }, { status: 400 });
     }
+    // reference_docs: chỉ cập nhật khi được gửi lên (COALESCE giữ giá trị cũ nếu thiếu),
+    // tránh xoá nhầm tài liệu khi form sửa tên/mô tả không gửi field này.
+    const refDocs = reference_docs === undefined ? null : String(reference_docs);
     const rows = auth.isAdmin
       ? await sql`
-          UPDATE projects SET name = ${name.trim()}, description = ${description || ""}
+          UPDATE projects SET name = ${name.trim()}, description = ${description || ""},
+            reference_docs = COALESCE(${refDocs}, reference_docs)
           WHERE id = ${id} RETURNING *
         `
       : await sql`
-          UPDATE projects SET name = ${name.trim()}, description = ${description || ""}
+          UPDATE projects SET name = ${name.trim()}, description = ${description || ""},
+            reference_docs = COALESCE(${refDocs}, reference_docs)
           WHERE id = ${id} AND user_id = ${auth.id} RETURNING *
         `;
     if (!rows[0]) {
