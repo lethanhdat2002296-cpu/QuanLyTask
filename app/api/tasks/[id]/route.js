@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema, canAccessTask } from "@/lib/db";
+import { sql, ensureSchema, canAccessTask, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES, DEFAULT_PRIORITY } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Lấy thông tin task hiện tại (trước khi sửa) để ghi nhật ký
+async function taskBefore(id) {
+  const rows = await sql`
+    SELECT t.status, t.project_id, t.customer_task, p.name AS project_name
+    FROM tasks t JOIN projects p ON p.id = t.project_id
+    WHERE t.id = ${id}
+  `;
+  return rows[0] || null;
+}
 
 // Cập nhật 1 task (admin sửa được mọi task)
 export async function PUT(request, { params }) {
@@ -38,6 +48,7 @@ export async function PUT(request, { params }) {
       );
     }
 
+    const before = await taskBefore(id);
     const rows = await sql`
       UPDATE tasks
       SET customer_task = ${customer_task},
@@ -59,6 +70,19 @@ export async function PUT(request, { params }) {
                 status, doc_link, end_date::text AS end_date, completed_at, priority,
                 created_at, updated_at
     `;
+    if (before && before.status !== status) {
+      await logActivity({
+        taskId: id,
+        userId: auth.id,
+        projectId: before.project_id,
+        projectName: before.project_name,
+        taskLabel: customer_task,
+        action: "status_change",
+        field: "status",
+        oldValue: before.status,
+        newValue: status,
+      });
+    }
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
     return serverError(e);
@@ -81,6 +105,7 @@ export async function PATCH(request, { params }) {
     if (!TASK_STATUSES.includes(status)) {
       return NextResponse.json({ error: "Trạng thái không hợp lệ" }, { status: 400 });
     }
+    const before = await taskBefore(id);
     const rows = await sql`
       UPDATE tasks
       SET status = ${status},
@@ -95,6 +120,19 @@ export async function PATCH(request, { params }) {
                 status, doc_link, end_date::text AS end_date, completed_at, priority,
                 created_at, updated_at
     `;
+    if (before && before.status !== status) {
+      await logActivity({
+        taskId: id,
+        userId: auth.id,
+        projectId: before.project_id,
+        projectName: before.project_name,
+        taskLabel: before.customer_task,
+        action: "status_change",
+        field: "status",
+        oldValue: before.status,
+        newValue: status,
+      });
+    }
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
     return serverError(e);
@@ -112,6 +150,17 @@ export async function DELETE(_request, { params }) {
     const id = Number(params.id);
     if (!(await canAccessTask(id, auth))) {
       return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
+    }
+    const before = await taskBefore(id);
+    if (before) {
+      await logActivity({
+        taskId: id,
+        userId: auth.id,
+        projectId: before.project_id,
+        projectName: before.project_name,
+        taskLabel: before.customer_task,
+        action: "delete",
+      });
     }
     await sql`DELETE FROM tasks WHERE id = ${id}`;
     return NextResponse.json({ ok: true });

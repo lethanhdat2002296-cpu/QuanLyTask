@@ -85,7 +85,26 @@ async function main() {
   `;
   await sql`CREATE INDEX IF NOT EXISTS idx_reset_token_hash ON password_reset_tokens(token_hash)`;
 
-  console.log("✅ Đã tạo xong bảng: users, projects, tasks, password_reset_tokens");
+  await sql`
+    CREATE TABLE IF NOT EXISTS task_activity_log (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      project_id INTEGER,
+      project_name TEXT,
+      task_label TEXT,
+      action TEXT NOT NULL,
+      field TEXT,
+      old_value TEXT,
+      new_value TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_activity_user ON task_activity_log(user_id, created_at DESC)`;
+
+  console.log(
+    "✅ Đã tạo xong bảng: users, projects, tasks, password_reset_tokens, task_activity_log"
+  );
 }
 
 main().catch((e) => {

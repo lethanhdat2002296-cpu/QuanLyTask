@@ -52,6 +52,14 @@ export default function Topbar() {
               Công việc của tôi
             </button>
           )}
+          {me && (
+            <button
+              className="btn btn-sm"
+              onClick={() => router.push("/activity")}
+            >
+              Lịch sử
+            </button>
+          )}
           {me?.isAdmin && (
             <button className="btn btn-sm" onClick={() => router.push("/admin")}>
               Quản trị

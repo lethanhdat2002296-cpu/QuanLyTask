@@ -342,6 +342,66 @@ a {
   gap: 6px;
   font-size: 14px;
 }
+
+/* Dòng thời gian (trang Lịch sử) */
+.timeline {
+  position: relative;
+  padding-left: 4px;
+}
+.tl-item {
+  display: flex;
+  gap: 14px;
+  padding-bottom: 18px;
+  position: relative;
+}
+.tl-item::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--border);
+}
+.tl-item:last-child::before {
+  display: none;
+}
+.tl-dot {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #fff;
+  z-index: 1;
+}
+.tl-body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 3px;
+}
+.tl-line1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tl-action {
+  font-weight: 700;
+  font-size: 14px;
+}
+.tl-label {
+  font-size: 14px;
+  margin-top: 2px;
+  word-break: break-word;
+}
+.tl-time {
+  font-size: 12px;
+  margin-top: 3px;
+}
 .task-head {
   display: flex;
   justify-content: space-between;

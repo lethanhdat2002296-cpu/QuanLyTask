@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema, canAccessProject } from "@/lib/db";
+import { sql, ensureSchema, canAccessProject, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES, DEFAULT_PRIORITY } from "@/lib/constants";
@@ -72,7 +72,17 @@ export async function POST(request, { params }) {
                 status, doc_link, end_date::text AS end_date, completed_at, priority,
                 created_at, updated_at
     `;
-    return NextResponse.json({ task: rows[0] }, { status: 201 });
+    const task = rows[0];
+    const proj = await sql`SELECT name FROM projects WHERE id = ${projectId}`;
+    await logActivity({
+      taskId: task.id,
+      userId: auth.id,
+      projectId,
+      projectName: proj[0]?.name,
+      taskLabel: task.customer_task,
+      action: "create",
+    });
+    return NextResponse.json({ task }, { status: 201 });
   } catch (e) {
     return serverError(e);
   }
