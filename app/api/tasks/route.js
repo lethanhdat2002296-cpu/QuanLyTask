@@ -25,6 +25,8 @@ export async function GET(request) {
     const doneMode = doneRaw === "0" ? "open" : doneRaw === "1" ? "done" : null;
     const overdueOnly = sp.get("overdue") === "1";
     const sort = sp.get("sort") || "default";
+    const qRaw = (sp.get("q") || "").trim();
+    const like = qRaw ? "%" + qRaw + "%" : null;
 
     const rows = await sql`
       SELECT
@@ -34,7 +36,11 @@ export async function GET(request) {
         t.end_date::text AS end_date, t.completed_at, t.created_at, t.updated_at,
         (t.end_date IS NOT NULL
          AND t.end_date < (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
-         AND t.status <> 'Hoàn thành') AS is_overdue
+         AND t.status <> 'Hoàn thành') AS is_overdue,
+        (t.end_date IS NOT NULL
+         AND t.end_date >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+         AND t.end_date <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 3
+         AND t.status <> 'Hoàn thành') AS is_due_soon
       FROM tasks t
       JOIN projects p ON p.id = t.project_id
       WHERE (${auth.isAdmin} OR p.user_id = ${auth.id})
@@ -47,6 +53,10 @@ export async function GET(request) {
              OR (t.end_date IS NOT NULL
                  AND t.end_date < (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
                  AND t.status <> 'Hoàn thành'))
+        AND (${like}::text IS NULL OR (
+             t.customer_task ILIKE ${like} OR t.question ILIKE ${like}
+             OR t.customer_answer ILIKE ${like} OR t.solution ILIKE ${like}
+        ))
       ORDER BY is_overdue DESC, t.end_date ASC NULLS LAST, t.priority ASC, t.created_at DESC
     `;
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessTask, logActivity } from "@/lib/db";
+import { syncTaskToSheet, deleteTaskFromSheet } from "@/lib/google";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES, DEFAULT_PRIORITY } from "@/lib/constants";
@@ -83,6 +84,7 @@ export async function PUT(request, { params }) {
         newValue: status,
       });
     }
+    await syncTaskToSheet(rows[0], before?.project_name);
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
     return serverError(e);
@@ -133,6 +135,7 @@ export async function PATCH(request, { params }) {
         newValue: status,
       });
     }
+    await syncTaskToSheet(rows[0], before?.project_name);
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
     return serverError(e);
@@ -163,6 +166,7 @@ export async function DELETE(_request, { params }) {
       });
     }
     await sql`DELETE FROM tasks WHERE id = ${id}`;
+    await deleteTaskFromSheet(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     return serverError(e);

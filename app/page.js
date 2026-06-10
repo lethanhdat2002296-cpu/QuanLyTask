@@ -167,6 +167,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          <div className="card" style={{ marginTop: 16 }}>
+            <h2 className="section-title">📤 Xuất báo cáo (CSV cho Excel)</h2>
+            <p className="muted" style={{ marginTop: 0 }}>
+              Tải danh sách task đã hoàn thành theo kỳ — mở bằng Excel/Google Sheets.
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <a className="btn" href="/api/reports?period=week">
+                ⬇ Hoàn thành tuần này
+              </a>
+              <a className="btn" href="/api/reports?period=month">
+                ⬇ Hoàn thành tháng này
+              </a>
+              <a className="btn" href="/api/reports?period=all">
+                ⬇ Tất cả task
+              </a>
+            </div>
+          </div>
+
           <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
             <button className="btn" onClick={() => router.push("/projects")}>
               🗂️ Xem dự án

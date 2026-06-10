@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessProject, logActivity } from "@/lib/db";
+import { syncTaskToSheet } from "@/lib/google";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES, DEFAULT_PRIORITY } from "@/lib/constants";
@@ -22,7 +23,14 @@ export async function GET(_request, { params }) {
     const rows = await sql`
       SELECT id, project_id, customer_task, question, customer_answer, solution,
              status, doc_link, end_date::text AS end_date, completed_at, priority,
-             created_at, updated_at
+             created_at, updated_at,
+             (end_date IS NOT NULL
+              AND end_date < (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+              AND status <> 'Hoàn thành') AS is_overdue,
+             (end_date IS NOT NULL
+              AND end_date >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+              AND end_date <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 3
+              AND status <> 'Hoàn thành') AS is_due_soon
       FROM tasks
       WHERE project_id = ${projectId}
       ORDER BY created_at DESC
@@ -82,6 +90,7 @@ export async function POST(request, { params }) {
       taskLabel: task.customer_task,
       action: "create",
     });
+    await syncTaskToSheet(task, proj[0]?.name);
     return NextResponse.json({ task }, { status: 201 });
   } catch (e) {
     return serverError(e);

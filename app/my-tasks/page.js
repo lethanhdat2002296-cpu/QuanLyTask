@@ -20,6 +20,7 @@ export default function MyTasksPage() {
   const [projectF, setProjectF] = useState("Tất cả");
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [sort, setSort] = useState("default");
+  const [q, setQ] = useState("");
 
   const [modalTask, setModalTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -32,6 +33,7 @@ export default function MyTasksPage() {
     if (projectF !== "Tất cả") p.set("project", projectF);
     if (overdueOnly) p.set("overdue", "1");
     if (sort !== "default") p.set("sort", sort);
+    if (q.trim()) p.set("q", q.trim());
     return p.toString();
   }
 
@@ -62,13 +64,16 @@ export default function MyTasksPage() {
 
   useEffect(() => {
     loadProjects();
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("overdue") === "1") setOverdueOnly(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    load();
+    const t = setTimeout(load, q ? 300 : 0);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, statusF, projectF, overdueOnly, sort]);
+  }, [view, statusF, projectF, overdueOnly, sort, q]);
 
   async function changeStatus(taskId, status) {
     await fetch(`/api/tasks/${taskId}`, {
@@ -112,6 +117,13 @@ export default function MyTasksPage() {
         {error && <div className="alert">{error}</div>}
 
         <div className="card" style={{ marginBottom: 16 }}>
+          <input
+            className="input"
+            style={{ marginBottom: 14 }}
+            placeholder="🔍 Tìm task theo nội dung, câu hỏi, trả lời, giải pháp..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
           <div className="filter-bar">
             <div className="filter-item">
               <span className="muted">Hiển thị:</span>

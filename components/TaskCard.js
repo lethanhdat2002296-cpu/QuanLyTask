@@ -62,6 +62,9 @@ export default function TaskCard({
         )}
         <span className="task-preview">{preview}</span>
         {task.is_overdue && <span className="badge badge-overdue">Quá hạn</span>}
+        {!task.is_overdue && task.is_due_soon && (
+          <span className="badge badge-soon">Sắp đến hạn</span>
+        )}
         <span
           className="prio-chip"
           style={{ color: prioColor, borderColor: prioColor }}
