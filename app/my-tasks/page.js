@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Topbar from "@/components/Topbar";
+import AppShell from "@/components/AppShell";
 import TaskCard from "@/components/TaskCard";
 import TaskModal from "@/components/TaskModal";
 import { TASK_STATUSES } from "@/lib/constants";
@@ -96,11 +96,9 @@ export default function MyTasksPage() {
   const overdueCount = tasks.filter((t) => t.is_overdue).length;
 
   return (
-    <>
-      <Topbar />
-      <div className="container">
-        <div className="row-between" style={{ marginBottom: 6 }}>
-          <h1 className="page-title">Công việc của tôi</h1>
+    <AppShell>
+      <div className="row-between" style={{ marginBottom: 6 }}>
+        <h1 className="page-title">Công việc của tôi</h1>
           {overdueCount > 0 && (
             <span className="badge badge-overdue">
               {overdueCount} task quá hạn
@@ -206,7 +204,6 @@ export default function MyTasksPage() {
             />
           ))
         )}
-      </div>
 
       {showModal && (
         <TaskModal
@@ -216,6 +213,6 @@ export default function MyTasksPage() {
           onSaved={onSaved}
         />
       )}
-    </>
+    </AppShell>
   );
 }

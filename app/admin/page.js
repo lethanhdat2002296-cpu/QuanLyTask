@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Topbar from "@/components/Topbar";
+import AppShell from "@/components/AppShell";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -84,11 +84,9 @@ export default function AdminPage() {
   }
 
   return (
-    <>
-      <Topbar />
-      <div className="container">
-        <div style={{ marginBottom: 8 }}>
-          <span
+    <AppShell>
+      <div style={{ marginBottom: 8 }}>
+        <span
             className="link"
             style={{ cursor: "pointer" }}
             onClick={() => router.push("/")}
@@ -186,7 +184,6 @@ export default function AdminPage() {
             </table>
           </div>
         )}
-      </div>
-    </>
+    </AppShell>
   );
 }

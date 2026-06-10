@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Topbar from "@/components/Topbar";
+import AppShell from "@/components/AppShell";
 import { STATUS_COLORS } from "@/lib/constants";
 
 function ymd(d) {
@@ -89,11 +89,9 @@ export default function ActivityPage() {
   }, [from, to, projectF]);
 
   return (
-    <>
-      <Topbar />
-      <div className="container">
-        <h1 className="page-title" style={{ marginBottom: 4 }}>
-          Lịch sử hoạt động
+    <AppShell>
+      <h1 className="page-title" style={{ marginBottom: 4 }}>
+        Lịch sử hoạt động
         </h1>
         <p className="muted" style={{ marginTop: 0 }}>
           Dòng thời gian những việc bạn đã làm — tạo task, đổi trạng thái, hoàn thành.
@@ -188,7 +186,6 @@ export default function ActivityPage() {
             })}
           </div>
         )}
-      </div>
-    </>
+    </AppShell>
   );
 }

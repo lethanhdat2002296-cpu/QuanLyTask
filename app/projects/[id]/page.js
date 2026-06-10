@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Topbar from "@/components/Topbar";
+import AppShell from "@/components/AppShell";
 import TaskModal from "@/components/TaskModal";
 import TaskCard from "@/components/TaskCard";
 import { TASK_STATUSES } from "@/lib/constants";
@@ -84,11 +84,9 @@ export default function ProjectDetailPage({ params }) {
     filter === "Tất cả" ? tasks : tasks.filter((t) => t.status === filter);
 
   return (
-    <>
-      <Topbar />
-      <div className="container">
-        <div style={{ marginBottom: 8 }}>
-          <span
+    <AppShell>
+      <div style={{ marginBottom: 8 }}>
+        <span
             className="link"
             style={{ cursor: "pointer" }}
             onClick={() => router.push("/")}
@@ -151,7 +149,6 @@ export default function ProjectDetailPage({ params }) {
             )}
           </>
         ) : null}
-      </div>
 
       {showModal && (
         <TaskModal
@@ -161,6 +158,6 @@ export default function ProjectDetailPage({ params }) {
           onSaved={onSaved}
         />
       )}
-    </>
+    </AppShell>
   );
 }
