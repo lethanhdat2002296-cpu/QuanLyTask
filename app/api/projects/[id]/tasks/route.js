@@ -20,7 +20,7 @@ export async function GET(_request, { params }) {
       return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
     }
     const rows = await sql`
-      SELECT id, project_id, customer_task, question, customer_answer, solution,
+      SELECT id, project_id, title, customer_task, question, customer_answer, solution,
              status, doc_link, end_date::text AS end_date, completed_at, priority,
              created_at, updated_at,
              (end_date IS NOT NULL
@@ -53,6 +53,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
     }
     const body = await request.json();
+    const title = (body.title || "").trim();
     const customer_task = (body.customer_task || "").trim();
     const question = body.question || "";
     const customer_answer = body.customer_answer || "";
@@ -64,18 +65,18 @@ export async function POST(request, { params }) {
     let priority = Number(body.priority);
     if (![1, 2, 3].includes(priority)) priority = DEFAULT_PRIORITY;
 
-    if (!customer_task) {
+    if (!title) {
       return NextResponse.json(
-        { error: "Vui lòng nhập nội dung Task khách hàng" },
+        { error: "Vui lòng nhập Tiêu đề task" },
         { status: 400 }
       );
     }
 
     const rows = await sql`
-      INSERT INTO tasks (project_id, customer_task, question, customer_answer, solution, status, end_date, doc_link, priority, completed_at)
-      VALUES (${projectId}, ${customer_task}, ${question}, ${customer_answer}, ${solution}, ${status}, ${end_date}, ${doc_link}, ${priority},
+      INSERT INTO tasks (project_id, title, customer_task, question, customer_answer, solution, status, end_date, doc_link, priority, completed_at)
+      VALUES (${projectId}, ${title}, ${customer_task}, ${question}, ${customer_answer}, ${solution}, ${status}, ${end_date}, ${doc_link}, ${priority},
               CASE WHEN ${status} = 'Hoàn thành' THEN now() ELSE NULL END)
-      RETURNING id, project_id, customer_task, question, customer_answer, solution,
+      RETURNING id, project_id, title, customer_task, question, customer_answer, solution,
                 status, doc_link, end_date::text AS end_date, completed_at, priority,
                 created_at, updated_at
     `;
@@ -86,7 +87,7 @@ export async function POST(request, { params }) {
       userId: auth.id,
       projectId,
       projectName: proj[0]?.name,
-      taskLabel: task.customer_task,
+      taskLabel: task.title || task.customer_task,
       action: "create",
     });
     return NextResponse.json({ task }, { status: 201 });

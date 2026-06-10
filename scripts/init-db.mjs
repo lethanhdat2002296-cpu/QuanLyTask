@@ -52,6 +52,7 @@ async function main() {
     CREATE TABLE IF NOT EXISTS tasks (
       id SERIAL PRIMARY KEY,
       project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      title TEXT NOT NULL DEFAULT '',
       customer_task TEXT NOT NULL DEFAULT '',
       question TEXT NOT NULL DEFAULT '',
       customer_answer TEXT NOT NULL DEFAULT '',
@@ -65,6 +66,7 @@ async function main() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT ''`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS end_date DATE`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS doc_link TEXT NOT NULL DEFAULT ''`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ`;

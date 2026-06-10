@@ -17,6 +17,18 @@ function fmtDate(v) {
   return isNaN(d.getTime()) ? s : d.toLocaleDateString("vi-VN");
 }
 
+// Tiêu đề ngắn từ dòng đầu nội dung (cho task cũ chưa có cột title)
+function firstLine(text) {
+  if (!text) return "";
+  const line =
+    text
+      .split("\n")
+      .map((l) => l.trim())
+      .find((l) => l.length > 0) || "";
+  const cleaned = line.replace(/^[-•*\d.\s)]+/, "").trim();
+  return (cleaned || line).slice(0, 100);
+}
+
 function Child({ color, icon, label, value }) {
   return (
     <div className="child">
@@ -44,7 +56,8 @@ export default function TaskCard({
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const text = task.customer_task || "";
-  const preview = text.replace(/\s+/g, " ").trim();
+  const displayTitle =
+    (task.title && task.title.trim()) || firstLine(text) || "(không tiêu đề)";
   const isLong = text.length > 260 || text.split("\n").length > 6;
   const prioLabel = PRIORITY_LABELS[task.priority] || "Trung bình";
   const prioColor = PRIORITY_COLORS[task.priority] || "#d97706";
@@ -60,7 +73,7 @@ export default function TaskCard({
         {showProject && task.project_name && (
           <span className="pill task-project">🗂️ {task.project_name}</span>
         )}
-        <span className="task-preview">{preview}</span>
+        <span className="task-preview">{displayTitle}</span>
         {task.is_overdue && <span className="badge badge-overdue">Quá hạn</span>}
         {!task.is_overdue && task.is_due_soon && (
           <span className="badge badge-soon">Sắp đến hạn</span>
@@ -70,7 +83,7 @@ export default function TaskCard({
           style={{ color: prioColor, borderColor: prioColor }}
           title={"Ưu tiên: " + prioLabel}
         >
-          {prioLabel}
+          ⚑ {prioLabel}
         </span>
         <span
           className="badge"
@@ -85,7 +98,7 @@ export default function TaskCard({
           <div className="task-meta">
             <span className="pill">🗓️ Tạo: {fmtDate(task.created_at)}</span>
             {task.end_date && (
-              <span className="pill">🏁 Kết thúc: {fmtDate(task.end_date)}</span>
+              <span className="pill">🏁 Hạn: {fmtDate(task.end_date)}</span>
             )}
             {task.completed_at && (
               <span className="pill pill-done">
@@ -104,14 +117,23 @@ export default function TaskCard({
               </a>
             )}
           </div>
-          <span className="parent-tag">📋 Task khách hàng</span>
-          <div className={"parent-body" + (isLong && !expanded ? " clamp" : "")}>
-            {text}
-          </div>
-          {isLong && (
-            <button className="link-btn" onClick={() => setExpanded((e) => !e)}>
-              {expanded ? "Thu gọn ▲" : "Xem thêm ▼"}
-            </button>
+          {text.trim() && (
+            <>
+              <span className="parent-tag">📋 Nội dung khách hàng</span>
+              <div
+                className={"parent-body" + (isLong && !expanded ? " clamp" : "")}
+              >
+                {text}
+              </div>
+              {isLong && (
+                <button
+                  className="link-btn"
+                  onClick={() => setExpanded((e) => !e)}
+                >
+                  {expanded ? "Thu gọn ▲" : "Xem thêm ▼"}
+                </button>
+              )}
+            </>
           )}
 
           <div className="children">

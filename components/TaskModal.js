@@ -8,9 +8,22 @@ import {
   DEFAULT_PRIORITY,
 } from "@/lib/constants";
 
+// Gợi ý tiêu đề ngắn từ dòng đầu của nội dung (cho task cũ chưa có tiêu đề)
+function firstLine(text) {
+  if (!text) return "";
+  const line =
+    text
+      .split("\n")
+      .map((l) => l.trim())
+      .find((l) => l.length > 0) || "";
+  const cleaned = line.replace(/^[-•*\d.\s)]+/, "").trim();
+  return (cleaned || line).slice(0, 90);
+}
+
 export default function TaskModal({ projectId, task, onClose, onSaved }) {
   const isEdit = Boolean(task);
   const [form, setForm] = useState({
+    title: task?.title?.trim() ? task.title : firstLine(task?.customer_task),
     customer_task: task?.customer_task || "",
     question: task?.question || "",
     customer_answer: task?.customer_answer || "",
@@ -29,8 +42,8 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
 
   async function submit(e) {
     e.preventDefault();
-    if (!form.customer_task.trim()) {
-      setError("Vui lòng nhập nội dung Task khách hàng");
+    if (!form.title.trim()) {
+      setError("Vui lòng nhập Tiêu đề task");
       return;
     }
     setSaving(true);
@@ -62,13 +75,23 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
         {error && <div className="alert">{error}</div>}
         <form onSubmit={submit}>
           <div className="field">
-            <label>Task khách hàng *</label>
+            <label>Tiêu đề task * (ngắn gọn, hiện trong danh sách)</label>
+            <input
+              className="input"
+              value={form.title}
+              onChange={(e) => set("title", e.target.value)}
+              autoFocus
+              maxLength={150}
+              placeholder="VD: Quản lý số sê-ri sản phẩm Apple khi đóng gói"
+            />
+          </div>
+          <div className="field">
+            <label>Nội dung / yêu cầu khách hàng</label>
             <textarea
               className="textarea"
               value={form.customer_task}
               onChange={(e) => set("customer_task", e.target.value)}
-              autoFocus
-              placeholder="Yêu cầu / nội dung khách hàng đưa ra"
+              placeholder="Mô tả chi tiết yêu cầu khách hàng đưa ra (không bắt buộc)"
             />
           </div>
           <div className="field">
@@ -127,7 +150,7 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
             </select>
           </div>
           <div className="field">
-            <label>Ngày kết thúc</label>
+            <label>Ngày hết hạn</label>
             <input
               className="input"
               type="date"

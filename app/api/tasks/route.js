@@ -31,7 +31,7 @@ export async function GET(request) {
     const rows = await sql`
       SELECT
         t.id, t.project_id, p.name AS project_name,
-        t.customer_task, t.question, t.customer_answer, t.solution,
+        t.title, t.customer_task, t.question, t.customer_answer, t.solution,
         t.status, t.priority, t.doc_link,
         t.end_date::text AS end_date, t.completed_at, t.created_at, t.updated_at,
         (t.end_date IS NOT NULL
@@ -54,8 +54,9 @@ export async function GET(request) {
                  AND t.end_date < (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
                  AND t.status <> 'Hoàn thành'))
         AND (${like}::text IS NULL OR (
-             t.customer_task ILIKE ${like} OR t.question ILIKE ${like}
-             OR t.customer_answer ILIKE ${like} OR t.solution ILIKE ${like}
+             t.title ILIKE ${like} OR t.customer_task ILIKE ${like}
+             OR t.question ILIKE ${like} OR t.customer_answer ILIKE ${like}
+             OR t.solution ILIKE ${like}
         ))
       ORDER BY is_overdue DESC, t.end_date ASC NULLS LAST, t.priority ASC, t.created_at DESC
     `;

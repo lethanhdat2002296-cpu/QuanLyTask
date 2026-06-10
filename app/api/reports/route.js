@@ -36,7 +36,7 @@ export async function GET(request) {
     if (period === "custom" && from > to) [from, to] = [to, from];
 
     const rows = await sql`
-      SELECT p.name AS project_name, t.customer_task, t.question, t.customer_answer,
+      SELECT p.name AS project_name, t.title, t.customer_task, t.question, t.customer_answer,
              t.solution, t.status, t.priority, t.end_date::text AS end_date,
              to_char(t.completed_at AT TIME ZONE ${TZ}, 'YYYY-MM-DD HH24:MI') AS completed_local,
              t.doc_link
@@ -54,14 +54,14 @@ export async function GET(request) {
     `;
 
     const headers = [
-      "Dự án", "Task khách hàng", "Đặt câu hỏi", "Khách trả lời", "Giải pháp",
-      "Trạng thái", "Ưu tiên", "Ngày kết thúc", "Ngày hoàn thành", "Link tài liệu",
+      "Dự án", "Tiêu đề", "Nội dung khách hàng", "Đặt câu hỏi", "Khách trả lời", "Giải pháp",
+      "Trạng thái", "Ưu tiên", "Ngày hết hạn", "Ngày hoàn thành", "Link tài liệu",
     ];
     const lines = [headers.map(csvCell).join(",")];
     for (const r of rows) {
       lines.push(
         [
-          r.project_name, r.customer_task, r.question, r.customer_answer, r.solution,
+          r.project_name, r.title, r.customer_task, r.question, r.customer_answer, r.solution,
           r.status, PRIORITY_LABELS[r.priority] || r.priority, r.end_date || "",
           r.completed_local || "", r.doc_link,
         ]

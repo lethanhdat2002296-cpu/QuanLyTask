@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 // Lấy thông tin task hiện tại (trước khi sửa) để ghi nhật ký
 async function taskBefore(id) {
   const rows = await sql`
-    SELECT t.status, t.project_id, t.customer_task, p.name AS project_name
+    SELECT t.status, t.project_id, t.title, t.customer_task, p.name AS project_name
     FROM tasks t JOIN projects p ON p.id = t.project_id
     WHERE t.id = ${id}
   `;
@@ -30,6 +30,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
     }
     const body = await request.json();
+    const title = (body.title ?? "").trim();
     const customer_task = (body.customer_task ?? "").trim();
     const question = body.question ?? "";
     const customer_answer = body.customer_answer ?? "";
@@ -41,9 +42,9 @@ export async function PUT(request, { params }) {
     let priority = Number(body.priority);
     if (![1, 2, 3].includes(priority)) priority = DEFAULT_PRIORITY;
 
-    if (!customer_task) {
+    if (!title) {
       return NextResponse.json(
-        { error: "Vui lòng nhập nội dung Task khách hàng" },
+        { error: "Vui lòng nhập Tiêu đề task" },
         { status: 400 }
       );
     }
@@ -51,7 +52,8 @@ export async function PUT(request, { params }) {
     const before = await taskBefore(id);
     const rows = await sql`
       UPDATE tasks
-      SET customer_task = ${customer_task},
+      SET title = ${title},
+          customer_task = ${customer_task},
           question = ${question},
           customer_answer = ${customer_answer},
           solution = ${solution},
@@ -66,7 +68,7 @@ export async function PUT(request, { params }) {
           END,
           updated_at = now()
       WHERE id = ${id}
-      RETURNING id, project_id, customer_task, question, customer_answer, solution,
+      RETURNING id, project_id, title, customer_task, question, customer_answer, solution,
                 status, doc_link, end_date::text AS end_date, completed_at, priority,
                 created_at, updated_at
     `;
@@ -76,7 +78,7 @@ export async function PUT(request, { params }) {
         userId: auth.id,
         projectId: before.project_id,
         projectName: before.project_name,
-        taskLabel: customer_task,
+        taskLabel: title,
         action: "status_change",
         field: "status",
         oldValue: before.status,
@@ -116,7 +118,7 @@ export async function PATCH(request, { params }) {
           END,
           updated_at = now()
       WHERE id = ${id}
-      RETURNING id, project_id, customer_task, question, customer_answer, solution,
+      RETURNING id, project_id, title, customer_task, question, customer_answer, solution,
                 status, doc_link, end_date::text AS end_date, completed_at, priority,
                 created_at, updated_at
     `;
@@ -126,7 +128,7 @@ export async function PATCH(request, { params }) {
         userId: auth.id,
         projectId: before.project_id,
         projectName: before.project_name,
-        taskLabel: before.customer_task,
+        taskLabel: before.title || before.customer_task,
         action: "status_change",
         field: "status",
         oldValue: before.status,
@@ -158,7 +160,7 @@ export async function DELETE(_request, { params }) {
         userId: auth.id,
         projectId: before.project_id,
         projectName: before.project_name,
-        taskLabel: before.customer_task,
+        taskLabel: before.title || before.customer_task,
         action: "delete",
       });
     }
