@@ -68,6 +68,7 @@ export async function GET(request) {
       tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     } else if (sort === "end_date") {
       tasks.sort((a, b) => {
+        if (!a.end_date && !b.end_date) return 0;
         if (!a.end_date) return 1;
         if (!b.end_date) return -1;
         return a.end_date < b.end_date ? -1 : a.end_date > b.end_date ? 1 : 0;

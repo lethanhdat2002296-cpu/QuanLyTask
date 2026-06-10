@@ -29,9 +29,11 @@ export async function GET(request) {
     const sp = new URL(request.url).searchParams;
     let period = sp.get("period") || "month";
     if (!["week", "month", "all", "custom"].includes(period)) period = "month";
-    const from = normalizeDate(sp.get("from"));
-    const to = normalizeDate(sp.get("to"));
+    let from = normalizeDate(sp.get("from"));
+    let to = normalizeDate(sp.get("to"));
     if (period === "custom" && (!from || !to)) period = "month";
+    // đảo nếu nhập ngược (chuỗi YYYY-MM-DD so sánh từ điển = đúng thứ tự)
+    if (period === "custom" && from > to) [from, to] = [to, from];
 
     const rows = await sql`
       SELECT p.name AS project_name, t.customer_task, t.question, t.customer_answer,
