@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessProject, logActivity } from "@/lib/db";
-import { syncTaskToSheet } from "@/lib/google";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
 import { DEFAULT_STATUS, TASK_STATUSES, DEFAULT_PRIORITY } from "@/lib/constants";
@@ -90,7 +89,6 @@ export async function POST(request, { params }) {
       taskLabel: task.customer_task,
       action: "create",
     });
-    await syncTaskToSheet(task, proj[0]?.name);
     return NextResponse.json({ task }, { status: 201 });
   } catch (e) {
     return serverError(e);

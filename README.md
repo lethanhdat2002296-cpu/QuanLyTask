@@ -112,27 +112,6 @@ Mở http://localhost:3000 → đăng nhập hoặc đăng ký.
 
 ---
 
-## Kết nối Google Sheets (tùy chọn) — tự đổ task sang Sheet
-
-Khi bật, mỗi lần **tạo/sửa task** app sẽ tự ghi 1 dòng vào Google Sheet (cập nhật theo `id`, không tạo trùng). Một chiều App → Sheet.
-
-**Cách bật (làm 1 lần):**
-
-1. Vào [Google Cloud Console](https://console.cloud.google.com) → tạo **New Project**.
-2. Tìm và **Enable** dịch vụ **Google Sheets API**.
-3. Vào **IAM & Admin → Service Accounts → Create Service Account** → đặt tên → Done.
-4. Mở service account vừa tạo → tab **Keys → Add Key → Create new key → JSON** → tải file `.json` về. Mở file, **copy giá trị `client_email`** (dạng `...@...iam.gserviceaccount.com`).
-5. Tạo 1 **Google Sheet** mới → bấm **Share** → dán `client_email` ở bước 4, chọn **Editor** → Share. Copy **Sheet ID** từ URL (`https://docs.google.com/spreadsheets/d/`**`SHEET_ID`**`/edit`).
-6. Thêm 2 biến môi trường (local trong `.env.local`, online trong **Vercel → Settings → Environment Variables**, bật **Sensitive** cho biến đầu):
-   - `GOOGLE_SERVICE_ACCOUNT` = **dán nguyên nội dung file JSON** (cả dấu ngoặc, để 1 ô).
-   - `GOOGLE_SHEET_ID` = Sheet ID ở bước 5.
-7. Redeploy. Từ giờ tạo/sửa task sẽ tự xuất hiện trong Sheet (dòng đầu là tiêu đề cột).
-
-> Nếu **không** đặt 2 biến này, tính năng tự tắt (app vẫn chạy bình thường).
-> Chiều ngược lại (sửa trên Sheet đẩy về app) cần Google Apps Script — chưa làm, có thể bổ sung sau.
-
----
-
 ## Bảo mật (đã áp dụng)
 
 - Mật khẩu băm bằng **bcrypt**; SQL **parameterized** (không injection).

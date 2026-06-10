@@ -12,6 +12,12 @@ export const metadata = {
   description: "Quản lý dự án: task khách hàng, câu hỏi, trả lời, giải pháp, trạng thái",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="vi" className={inter.variable}>

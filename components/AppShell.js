@@ -14,6 +14,7 @@ export default function AppShell({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [me, setMe] = useState(null);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -22,10 +23,20 @@ export default function AppShell({ children }) {
       .catch(() => {});
   }, []);
 
+  // Đóng menu khi chuyển trang
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
     router.refresh();
+  }
+
+  function go(href) {
+    router.push(href);
+    setNavOpen(false);
   }
 
   function isActive(item) {
@@ -40,16 +51,25 @@ export default function AppShell({ children }) {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand" onClick={() => router.push("/")}>
-          📋 <span>Quản Lý Task</span>
+      <aside className={"sidebar" + (navOpen ? " nav-open" : "")}>
+        <div className="sidebar-top">
+          <div className="sidebar-brand" onClick={() => go("/")}>
+            📋 <span>Quản Lý Task</span>
+          </div>
+          <button
+            className="hamburger"
+            onClick={() => setNavOpen((o) => !o)}
+            aria-label="Menu"
+          >
+            {navOpen ? "✕" : "☰"}
+          </button>
         </div>
         <nav className="sidebar-nav">
           {items.map((item) => (
             <button
               key={item.href}
               className={"sidebar-link" + (isActive(item) ? " active" : "")}
-              onClick={() => router.push(item.href)}
+              onClick={() => go(item.href)}
             >
               <span className="ico">{item.ico}</span>
               <span className="label-text">{item.label}</span>
