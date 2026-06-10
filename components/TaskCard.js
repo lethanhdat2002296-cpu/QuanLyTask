@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { TASK_STATUSES, STATUS_COLORS } from "@/lib/constants";
+import {
+  TASK_STATUSES,
+  STATUS_COLORS,
+  PRIORITY_LABELS,
+  PRIORITY_COLORS,
+} from "@/lib/constants";
 
 function fmtDate(v) {
   if (!v) return "";
@@ -29,12 +34,20 @@ function Child({ color, icon, label, value }) {
   );
 }
 
-export default function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
+export default function TaskCard({
+  task,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  showProject = false,
+}) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const text = task.customer_task || "";
   const preview = text.replace(/\s+/g, " ").trim();
   const isLong = text.length > 260 || text.split("\n").length > 6;
+  const prioLabel = PRIORITY_LABELS[task.priority] || "Trung bình";
+  const prioColor = PRIORITY_COLORS[task.priority] || "#d97706";
 
   return (
     <div className={"task" + (open ? " task-open" : "")}>
@@ -44,7 +57,18 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
         aria-expanded={open}
       >
         <span className="task-chevron">{open ? "▾" : "▸"}</span>
+        {showProject && task.project_name && (
+          <span className="pill task-project">🗂️ {task.project_name}</span>
+        )}
         <span className="task-preview">{preview}</span>
+        {task.is_overdue && <span className="badge badge-overdue">Quá hạn</span>}
+        <span
+          className="prio-chip"
+          style={{ color: prioColor, borderColor: prioColor }}
+          title={"Ưu tiên: " + prioLabel}
+        >
+          {prioLabel}
+        </span>
         <span
           className="badge"
           style={{ background: STATUS_COLORS[task.status] || "#6b7280" }}
@@ -60,6 +84,12 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
             {task.end_date && (
               <span className="pill">🏁 Kết thúc: {fmtDate(task.end_date)}</span>
             )}
+            {task.completed_at && (
+              <span className="pill pill-done">
+                🏆 Hoàn thành: {fmtDate(task.completed_at)}
+              </span>
+            )}
+            <span className="pill">⚑ Ưu tiên: {prioLabel}</span>
             {task.doc_link && (
               <a
                 className="pill pill-link"

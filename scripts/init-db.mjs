@@ -59,12 +59,19 @@ async function main() {
       status TEXT NOT NULL DEFAULT 'Mới',
       end_date DATE,
       doc_link TEXT NOT NULL DEFAULT '',
+      completed_at TIMESTAMPTZ,
+      priority SMALLINT NOT NULL DEFAULT 2,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS end_date DATE`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS doc_link TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority SMALLINT NOT NULL DEFAULT 2`;
+  await sql`UPDATE tasks SET completed_at = updated_at WHERE status = 'Hoàn thành' AND completed_at IS NULL`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS password_reset_tokens (

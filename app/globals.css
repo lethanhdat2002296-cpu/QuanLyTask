@@ -301,6 +301,47 @@ a {
 .pill-link:hover {
   background: #e0e7ff;
 }
+.pill-done {
+  background: #f0fdf4;
+  color: #15803d;
+}
+.task-project {
+  flex-shrink: 0;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 600;
+}
+/* Chip mức độ ưu tiên: viền + chữ màu, nền trắng (phân biệt với badge trạng thái) */
+.prio-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1.5px solid;
+  background: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.badge-overdue {
+  background: #dc2626;
+  flex-shrink: 0;
+}
+
+/* Thanh bộ lọc (trang Công việc của tôi) */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
 .task-head {
   display: flex;
   justify-content: space-between;

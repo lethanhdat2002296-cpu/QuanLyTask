@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessTask } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
-import { DEFAULT_STATUS, TASK_STATUSES } from "@/lib/constants";
+import { DEFAULT_STATUS, TASK_STATUSES, DEFAULT_PRIORITY } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +28,8 @@ export async function PUT(request, { params }) {
     const doc_link = normalizeLink(body.doc_link);
     let status = body.status || DEFAULT_STATUS;
     if (!TASK_STATUSES.includes(status)) status = DEFAULT_STATUS;
+    let priority = Number(body.priority);
+    if (![1, 2, 3].includes(priority)) priority = DEFAULT_PRIORITY;
 
     if (!customer_task) {
       return NextResponse.json(
@@ -45,10 +47,17 @@ export async function PUT(request, { params }) {
           status = ${status},
           end_date = ${end_date},
           doc_link = ${doc_link},
+          priority = ${priority},
+          completed_at = CASE
+            WHEN ${status} = 'Hoàn thành' AND completed_at IS NULL THEN now()
+            WHEN ${status} <> 'Hoàn thành' THEN NULL
+            ELSE completed_at
+          END,
           updated_at = now()
       WHERE id = ${id}
       RETURNING id, project_id, customer_task, question, customer_answer, solution,
-                status, doc_link, end_date::text AS end_date, created_at, updated_at
+                status, doc_link, end_date::text AS end_date, completed_at, priority,
+                created_at, updated_at
     `;
     return NextResponse.json({ task: rows[0] });
   } catch (e) {
@@ -74,10 +83,17 @@ export async function PATCH(request, { params }) {
     }
     const rows = await sql`
       UPDATE tasks
-      SET status = ${status}, updated_at = now()
+      SET status = ${status},
+          completed_at = CASE
+            WHEN ${status} = 'Hoàn thành' AND completed_at IS NULL THEN now()
+            WHEN ${status} <> 'Hoàn thành' THEN NULL
+            ELSE completed_at
+          END,
+          updated_at = now()
       WHERE id = ${id}
       RETURNING id, project_id, customer_task, question, customer_answer, solution,
-                status, doc_link, end_date::text AS end_date, created_at, updated_at
+                status, doc_link, end_date::text AS end_date, completed_at, priority,
+                created_at, updated_at
     `;
     return NextResponse.json({ task: rows[0] });
   } catch (e) {

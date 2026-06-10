@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { TASK_STATUSES, DEFAULT_STATUS } from "@/lib/constants";
+import {
+  TASK_STATUSES,
+  DEFAULT_STATUS,
+  PRIORITIES,
+  DEFAULT_PRIORITY,
+} from "@/lib/constants";
 
 export default function TaskModal({ projectId, task, onClose, onSaved }) {
   const isEdit = Boolean(task);
@@ -11,6 +16,7 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
     customer_answer: task?.customer_answer || "",
     solution: task?.solution || "",
     status: task?.status || DEFAULT_STATUS,
+    priority: task?.priority || DEFAULT_PRIORITY,
     end_date: (task?.end_date || "").slice(0, 10),
     doc_link: task?.doc_link || "",
   });
@@ -102,6 +108,20 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
               {TASK_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Mức độ ưu tiên</label>
+            <select
+              className="select"
+              value={form.priority}
+              onChange={(e) => set("priority", Number(e.target.value))}
+            >
+              {PRIORITIES.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
                 </option>
               ))}
             </select>
