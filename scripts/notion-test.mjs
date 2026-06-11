@@ -9,7 +9,11 @@ try {
 }
 
 const TOKEN = process.env.NOTION_TOKEN;
-const DB = process.env.NOTION_DATABASE_ID;
+const DB_RAW = process.env.NOTION_DATABASE_ID;
+// tự cắt ?v=..., dấu "-", tiền tố URL -> lấy 32 ký tự hex của database id
+const DB =
+  String(DB_RAW || "").trim().split("?")[0].replace(/-/g, "").match(/[0-9a-fA-F]{32}/)?.[0] ||
+  DB_RAW;
 const TITLE_PROP = process.env.NOTION_TITLE_PROPERTY || "Name";
 
 if (!TOKEN || !DB) {
