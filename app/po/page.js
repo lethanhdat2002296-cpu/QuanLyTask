@@ -1,0 +1,243 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import AppShell from "@/components/AppShell";
+import {
+  BACKLOG_BUCKETS,
+  BACKLOG_STATUSES,
+  BACKLOG_STATUS_COLORS,
+  PHASE_STATUS_COLORS,
+} from "@/lib/constants";
+
+function StatCard({ icon, iconBg, num, label, color }) {
+  return (
+    <div className="stat-card">
+      <div className="stat-top">
+        <div className="stat-num" style={{ color }}>
+          {num}
+        </div>
+        <div className="stat-icon" style={{ background: iconBg }}>
+          {icon}
+        </div>
+      </div>
+      <div className="stat-label">{label}</div>
+    </div>
+  );
+}
+
+export default function PoDashboardPage() {
+  const router = useRouter();
+  const [items, setItems] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [projectF, setProjectF] = useState("");
+  const [phases, setPhases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    Promise.all([fetch("/api/po/backlog"), fetch("/api/projects")])
+      .then(async ([bRes, pRes]) => {
+        if (bRes.status === 401 || pRes.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        const b = await bRes.json();
+        const p = await pRes.json();
+        setItems(b.items || []);
+        const ps = p.projects || [];
+        setProjects(ps);
+        if (ps[0]) setProjectF(String(ps[0].id));
+      })
+      .catch(() => setError("Không tải được số liệu"))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Giai đoạn của dự án đang chọn
+  useEffect(() => {
+    if (!projectF) return;
+    fetch(`/api/po/phases?project=${projectF}`)
+      .then((r) => (r.ok ? r.json() : { phases: [] }))
+      .then((d) => setPhases(d.phases || []))
+      .catch(() => {});
+  }, [projectF]);
+
+  const byBucket = Object.fromEntries(
+    BACKLOG_BUCKETS.map((b) => [
+      b.value,
+      items.filter((i) => i.bucket === b.value).length,
+    ])
+  );
+  const doneCount = items.filter((i) => i.status === "Hoàn thành").length;
+  const byStatus = BACKLOG_STATUSES.map((s) => ({
+    status: s,
+    count: items.filter((i) => i.status === s).length,
+  })).filter((x) => x.count > 0);
+  const maxStatus = Math.max(1, ...byStatus.map((s) => s.count));
+  const runningPhases = phases.filter((ph) => ph.status === "Đang làm");
+  const shownPhases = runningPhases.length > 0 ? runningPhases : phases;
+
+  return (
+    <AppShell>
+      <div className="row-between" style={{ marginBottom: 22 }}>
+        <h1 className="page-title">Tổng quan PO</h1>
+        <button
+          className="btn btn-primary"
+          onClick={() => router.push("/po/backlog")}
+        >
+          📦 Backlog sản phẩm
+        </button>
+      </div>
+
+      {error && <div className="alert">{error}</div>}
+
+      {loading ? (
+        <p className="muted">Đang tải...</p>
+      ) : (
+        <>
+          <div className="stat-grid" style={{ marginBottom: 20 }}>
+            <StatCard
+              icon="📦"
+              iconBg="#eef2ff"
+              num={items.length}
+              label="Tổng hạng mục backlog"
+            />
+            <StatCard
+              icon="🔴"
+              iconBg="#fef2f2"
+              num={byBucket.now}
+              label="Làm ngay (Now)"
+              color={byBucket.now > 0 ? "#dc2626" : undefined}
+            />
+            <StatCard
+              icon="🟠"
+              iconBg="#fff7ed"
+              num={byBucket.next}
+              label="Sắp tới (Next)"
+              color="#d97706"
+            />
+            <StatCard
+              icon="✅"
+              iconBg="#f0fdf4"
+              num={doneCount}
+              label={`Đã hoàn thành (Để sau: ${byBucket.later})`}
+              color="#16a34a"
+            />
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 16,
+            }}
+          >
+            <div className="card">
+              <h2 className="section-title">Hạng mục theo trạng thái</h2>
+              {byStatus.length === 0 ? (
+                <p className="muted">
+                  Chưa có hạng mục nào — thêm ở trang Backlog sản phẩm.
+                </p>
+              ) : (
+                <div className="chart">
+                  {byStatus.map((s) => (
+                    <div className="bar-row" key={s.status}>
+                      <div className="bar-label">{s.status}</div>
+                      <div className="bar-track">
+                        <div
+                          className="bar-fill"
+                          style={{
+                            width: (s.count / maxStatus) * 100 + "%",
+                            background:
+                              BACKLOG_STATUS_COLORS[s.status] || "#6b7280",
+                          }}
+                        />
+                      </div>
+                      <div className="bar-val">{s.count}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="card">
+              <div className="row-between" style={{ marginBottom: 6 }}>
+                <h2 className="section-title" style={{ margin: 0 }}>
+                  Giai đoạn{runningPhases.length > 0 ? " đang chạy" : ""}
+                </h2>
+                {projects.length > 0 && (
+                  <select
+                    className="select"
+                    style={{ width: "auto" }}
+                    value={projectF}
+                    onChange={(e) => setProjectF(e.target.value)}
+                  >
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              {shownPhases.length === 0 ? (
+                <p className="muted">
+                  Dự án này chưa có giai đoạn — tạo ở trang Giai đoạn phát
+                  triển.
+                </p>
+              ) : (
+                <div className="chart">
+                  {shownPhases.map((ph) => {
+                    const pct = ph.item_count
+                      ? Math.round((ph.done_count / ph.item_count) * 100)
+                      : 0;
+                    return (
+                      <div className="bar-row" key={ph.id}>
+                        <div className="bar-label" title={ph.name}>
+                          {ph.name}
+                          <span
+                            style={{
+                              color:
+                                PHASE_STATUS_COLORS[ph.status] || "#6b7280",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {" "}
+                            · {ph.status}
+                          </span>
+                        </div>
+                        <div className="bar-track">
+                          <div
+                            className="bar-fill"
+                            style={{
+                              width: pct + "%",
+                              background:
+                                pct >= 100 ? "var(--success)" : "#4f46e5",
+                            }}
+                          />
+                        </div>
+                        <div className="bar-val">{pct}%</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}
+          >
+            <button className="btn" onClick={() => router.push("/po/backlog")}>
+              📦 Backlog sản phẩm
+            </button>
+            <button className="btn" onClick={() => router.push("/po/phases")}>
+              🗺️ Giai đoạn phát triển
+            </button>
+          </div>
+        </>
+      )}
+    </AppShell>
+  );
+}

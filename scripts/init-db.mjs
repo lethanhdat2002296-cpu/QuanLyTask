@@ -106,8 +106,42 @@ async function main() {
   `;
   await sql`CREATE INDEX IF NOT EXISTS idx_activity_user ON task_activity_log(user_id, created_at DESC)`;
 
+  // ===== Chế độ PO =====
+  await sql`
+    CREATE TABLE IF NOT EXISTS phases (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      goal TEXT NOT NULL DEFAULT '',
+      start_date DATE,
+      end_date DATE,
+      status TEXT NOT NULL DEFAULT 'Chưa bắt đầu',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_phases_project ON phases(project_id)`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS backlog_items (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      phase_id INTEGER REFERENCES phases(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      user_story TEXT NOT NULL DEFAULT '',
+      acceptance_criteria TEXT NOT NULL DEFAULT '',
+      business_value SMALLINT NOT NULL DEFAULT 2,
+      effort SMALLINT NOT NULL DEFAULT 2,
+      bucket TEXT NOT NULL DEFAULT 'next',
+      status TEXT NOT NULL DEFAULT 'Ý tưởng',
+      note TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_backlog_project ON backlog_items(project_id)`;
+
   console.log(
-    "✅ Đã tạo xong bảng: users, projects, tasks, password_reset_tokens, task_activity_log"
+    "✅ Đã tạo xong bảng: users, projects, tasks, password_reset_tokens, task_activity_log, phases, backlog_items"
   );
 }
 

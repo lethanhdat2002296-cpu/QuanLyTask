@@ -3,11 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-const NAV = [
+// Menu theo chế độ làm việc: BA (phân tích nghiệp vụ) / PO (chủ sản phẩm)
+const NAV_BA = [
   { href: "/", label: "Tổng quan", ico: "📊", exact: true },
   { href: "/projects", label: "Dự án", ico: "🗂️" },
   { href: "/my-tasks", label: "Công việc của tôi", ico: "✅" },
   { href: "/activity", label: "Lịch sử", ico: "🕒" },
+];
+const NAV_PO = [
+  { href: "/po", label: "Tổng quan PO", ico: "📊", exact: true },
+  { href: "/po/backlog", label: "Backlog sản phẩm", ico: "📦" },
+  { href: "/po/phases", label: "Giai đoạn phát triển", ico: "🗺️" },
 ];
 
 export default function AppShell({ children }) {
@@ -44,7 +50,18 @@ export default function AppShell({ children }) {
     return pathname === item.href || pathname.startsWith(item.href + "/");
   }
 
-  const items = [...NAV];
+  // Chế độ làm việc suy ra từ URL (trang /po* = chế độ PO) — không lệch SSR/client.
+  const mode = pathname.startsWith("/po") ? "po" : "ba";
+
+  function switchMode(m) {
+    if (m === mode) return;
+    try {
+      localStorage.setItem("workspaceMode", m); // nhớ cho lần đăng nhập sau
+    } catch {}
+    go(m === "po" ? "/po" : "/");
+  }
+
+  const items = [...(mode === "po" ? NAV_PO : NAV_BA)];
   if (me?.isAdmin) {
     items.push({ href: "/admin", label: "Quản trị", ico: "⚙️" });
   }
@@ -53,7 +70,10 @@ export default function AppShell({ children }) {
     <div className="shell">
       <aside className={"sidebar" + (navOpen ? " nav-open" : "")}>
         <div className="sidebar-top">
-          <div className="sidebar-brand" onClick={() => go("/")}>
+          <div
+            className="sidebar-brand"
+            onClick={() => go(mode === "po" ? "/po" : "/")}
+          >
             📋 <span>Quản Lý Task</span>
           </div>
           <button
@@ -62,6 +82,22 @@ export default function AppShell({ children }) {
             aria-label="Menu"
           >
             {navOpen ? "✕" : "☰"}
+          </button>
+        </div>
+        <div className="mode-toggle" aria-label="Chế độ làm việc">
+          <button
+            className={"mode-btn" + (mode === "ba" ? " active" : "")}
+            onClick={() => switchMode("ba")}
+            title="Chế độ Business Analyst: dự án, task khách hàng"
+          >
+            🧩 BA
+          </button>
+          <button
+            className={"mode-btn" + (mode === "po" ? " active" : "")}
+            onClick={() => switchMode("po")}
+            title="Chế độ Product Owner: backlog, giai đoạn phát triển"
+          >
+            🎯 PO
           </button>
         </div>
         <nav className="sidebar-nav">

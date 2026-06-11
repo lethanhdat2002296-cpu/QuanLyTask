@@ -23,6 +23,16 @@ bấm **"✨ Gợi ý bằng AI"** để Google Gemini đọc tài liệu + nộ
 **giải pháp** và **câu hỏi cần làm rõ** (điền sẵn vào form để bạn xem/sửa trước khi lưu). Cần `GEMINI_API_KEY`
 (lấy miễn phí tại https://aistudio.google.com); thiếu key thì nút báo "chưa cấu hình".
 
+**Chế độ PO (Product Owner):** menu có nút gạt **[🧩 BA | 🎯 PO]** — app nhớ lựa chọn cho lần
+đăng nhập sau. Chế độ PO gồm:
+
+- **📊 Tổng quan PO** — đếm hạng mục Now/Next/Later, tiến độ các giai đoạn.
+- **📦 Backlog sản phẩm** — hạng mục/tính năng với *User story*, *Tiêu chí chấp nhận*,
+  *Giá trị kinh doanh*, *Công sức*, xếp nhóm **Làm ngay (Now) / Sắp tới (Next) / Để sau (Later)**;
+  nút **✨ AI viết User story & Tiêu chí** (Gemini vai PO, dựa trên tài liệu dự án).
+- **🗺️ Giai đoạn phát triển** — mỗi dự án có lộ trình giai đoạn riêng (GĐ1 MVP, GĐ2...):
+  mục tiêu, thời gian, trạng thái, tiến độ tự tính theo số hạng mục backlog đã hoàn thành.
+
 ---
 
 ## 1. Cài đặt

@@ -4,7 +4,7 @@
     {
       "name": "preview",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["next", "start", "-p", "3500"],
+      "runtimeArgs": ["next", "dev", "-p", "3500"],
       "port": 3500
     }
   ]

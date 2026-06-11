@@ -27,7 +27,12 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      router.replace("/");
+      // Vào lại đúng chế độ làm việc đã chọn lần trước (BA hoặc PO)
+      let dest = "/";
+      try {
+        if (localStorage.getItem("workspaceMode") === "po") dest = "/po";
+      } catch {}
+      router.replace(dest);
       router.refresh();
     } catch (err) {
       setError("Không kết nối được máy chủ");

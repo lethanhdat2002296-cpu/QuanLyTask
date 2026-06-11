@@ -85,6 +85,33 @@ a {
   cursor: pointer;
   padding: 10px 16px;
 }
+/* Nút gạt chế độ làm việc BA | PO */
+.mode-toggle {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px 2px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: var(--sidebar-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.mode-btn:hover {
+  color: #e2e8f0;
+}
+.mode-btn.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -848,10 +875,13 @@ a {
   .sidebar-brand {
     padding: 12px 14px;
   }
-  /* nav + chân ẩn cho tới khi bấm menu */
+  /* nav + nút gạt + chân ẩn cho tới khi bấm menu */
   .sidebar-nav {
     display: none;
     padding: 4px 10px 10px;
+  }
+  .mode-toggle {
+    display: none;
   }
   .sidebar-foot {
     display: none;
@@ -860,6 +890,10 @@ a {
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+  .sidebar.nav-open .mode-toggle {
+    display: flex;
+    padding: 8px 12px 0;
   }
   .sidebar.nav-open .sidebar-foot {
     display: block;
