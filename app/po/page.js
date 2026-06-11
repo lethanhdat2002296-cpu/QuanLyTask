@@ -26,6 +26,41 @@ function StatCard({ icon, iconBg, num, label, color }) {
   );
 }
 
+// Khối văn bản trong kết quả phân tích AI
+function AnalysisText({ icon, title, text }) {
+  if (!text) return null;
+  return (
+    <div>
+      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>
+        {icon} {title}
+      </div>
+      <div style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+        {text}
+      </div>
+    </div>
+  );
+}
+
+// Khối danh sách (điểm mạnh / rủi ro / đề xuất) trong kết quả phân tích AI
+function AnalysisList({ icon, title, items, color, ordered }) {
+  if (!items || items.length === 0) return null;
+  const Tag = ordered ? "ol" : "ul";
+  return (
+    <div>
+      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color }}>
+        {icon} {title}
+      </div>
+      <Tag style={{ margin: 0, paddingLeft: 22, fontSize: 14, lineHeight: 1.6 }}>
+        {items.map((it, i) => (
+          <li key={i} style={{ marginBottom: 3 }}>
+            {it}
+          </li>
+        ))}
+      </Tag>
+    </div>
+  );
+}
+
 export default function PoDashboardPage() {
   const router = useRouter();
   const [items, setItems] = useState([]);
@@ -34,6 +69,9 @@ export default function PoDashboardPage() {
   const [phases, setPhases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [analyzeErr, setAnalyzeErr] = useState("");
 
   useEffect(() => {
     Promise.all([fetch("/api/po/backlog"), fetch("/api/projects")])
@@ -57,11 +95,37 @@ export default function PoDashboardPage() {
   // Giai đoạn của dự án đang chọn
   useEffect(() => {
     if (!projectF) return;
+    setAnalysis(null); // đổi dự án thì bỏ kết quả phân tích cũ
+    setAnalyzeErr("");
     fetch(`/api/po/phases?project=${projectF}`)
       .then((r) => (r.ok ? r.json() : { phases: [] }))
       .then((d) => setPhases(d.phases || []))
       .catch(() => {});
   }, [projectF]);
+
+  async function analyze() {
+    if (!projectF) return;
+    setAnalyzing(true);
+    setAnalyzeErr("");
+    setAnalysis(null);
+    try {
+      const res = await fetch("/api/po/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: Number(projectF) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAnalyzeErr(data.error || "Không phân tích được, thử lại sau.");
+        return;
+      }
+      setAnalysis(data.analysis);
+    } catch {
+      setAnalyzeErr("Không phân tích được, thử lại sau.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   const byBucket = Object.fromEntries(
     BACKLOG_BUCKETS.map((b) => [
@@ -124,6 +188,89 @@ export default function PoDashboardPage() {
               label={`Đã hoàn thành (Để sau: ${byBucket.later})`}
               color="#16a34a"
             />
+          </div>
+
+          <div
+            className="card"
+            style={{
+              marginBottom: 20,
+              border: "1px solid #c7d2fe",
+              background: "#fafaff",
+            }}
+          >
+            <div className="row-between" style={{ flexWrap: "wrap", gap: 10 }}>
+              <h2 className="section-title" style={{ margin: 0 }}>
+                🧭 AI đánh giá hướng sản phẩm
+              </h2>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {projects.length > 0 && (
+                  <select
+                    className="select"
+                    style={{ width: "auto" }}
+                    value={projectF}
+                    onChange={(e) => setProjectF(e.target.value)}
+                  >
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={analyze}
+                  disabled={analyzing || !projectF}
+                >
+                  {analyzing ? "Đang phân tích..." : "Phân tích"}
+                </button>
+              </div>
+            </div>
+            <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+              AI cố vấn đọc backlog + giai đoạn + tài liệu của dự án rồi đánh giá
+              hướng đi, sức khỏe, rủi ro và đề xuất 3 ưu tiên tiếp theo.
+            </p>
+
+            {analyzeErr && (
+              <div className="alert" style={{ marginTop: 12 }}>
+                {analyzeErr}
+              </div>
+            )}
+
+            {analysis && (
+              <div style={{ marginTop: 14, display: "grid", gap: 14 }}>
+                <AnalysisText icon="🎯" title="Hướng đi" text={analysis.direction} />
+                <AnalysisList
+                  icon="💪"
+                  title="Điểm mạnh"
+                  items={analysis.strengths}
+                  color="#16a34a"
+                />
+                <AnalysisText
+                  icon="❤️"
+                  title="Sức khỏe & tiến độ"
+                  text={analysis.health}
+                />
+                <AnalysisText
+                  icon="⚖️"
+                  title="Cân đối backlog"
+                  text={analysis.backlogBalance}
+                />
+                <AnalysisList
+                  icon="⚠️"
+                  title="Rủi ro"
+                  items={analysis.risks}
+                  color="#d97706"
+                />
+                <AnalysisList
+                  icon="✅"
+                  title="3 đề xuất ưu tiên tiếp theo"
+                  items={analysis.recommendations}
+                  color="#4f46e5"
+                  ordered
+                />
+              </div>
+            )}
           </div>
 
           <div

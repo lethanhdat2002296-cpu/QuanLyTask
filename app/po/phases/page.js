@@ -157,8 +157,9 @@ export default function PhasesPage() {
             </div>
           ) : (
             phases.map((ph, idx) => {
-              const pct = ph.item_count
-                ? Math.round((ph.done_count / ph.item_count) * 100)
+              // Tiến độ tính theo CÔNG SỨC (effort), không chỉ đếm số lượng hạng mục
+              const pct = ph.total_effort
+                ? Math.round((ph.done_effort / ph.total_effort) * 100)
                 : 0;
               return (
                 <div className="card" key={ph.id} style={{ marginBottom: 12 }}>
@@ -182,6 +183,9 @@ export default function PhasesPage() {
                     <h2 className="section-title" style={{ margin: 0, flex: 1 }}>
                       {ph.name}
                     </h2>
+                    {ph.is_overdue && (
+                      <span className="badge badge-overdue">Trễ hạn</span>
+                    )}
                     <span
                       className="badge"
                       style={{
@@ -201,6 +205,9 @@ export default function PhasesPage() {
                     )}
                     <span className="pill">
                       📦 {ph.item_count} hạng mục · ✅ {ph.done_count} xong
+                    </span>
+                    <span className="pill">
+                      ⚖️ Công sức: {ph.done_effort}/{ph.total_effort}
                     </span>
                   </div>
 
@@ -231,6 +238,10 @@ export default function PhasesPage() {
                     <span className="muted" style={{ fontSize: 13, width: 42 }}>
                       {pct}%
                     </span>
+                  </div>
+                  <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                    Tiến độ tính theo công sức (hạng mục lớn nặng hơn hạng mục
+                    nhỏ)
                   </div>
 
                   <div className="task-actions" style={{ marginTop: 12 }}>

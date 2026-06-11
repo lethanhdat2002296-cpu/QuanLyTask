@@ -13,6 +13,8 @@ const NAV_BA = [
 const NAV_PO = [
   { href: "/po", label: "Tổng quan PO", ico: "📊", exact: true },
   { href: "/po/backlog", label: "Backlog sản phẩm", ico: "📦" },
+  { href: "/po/matrix", label: "Ma trận ưu tiên", ico: "🎯" },
+  { href: "/po/roadmap", label: "Roadmap", ico: "📅" },
   { href: "/po/phases", label: "Giai đoạn phát triển", ico: "🗺️" },
 ];
 

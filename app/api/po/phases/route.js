@@ -29,7 +29,12 @@ export async function GET(request) {
              ph.start_date::text AS start_date, ph.end_date::text AS end_date,
              ph.status, ph.created_at,
              COUNT(b.id)::int AS item_count,
-             (COUNT(b.id) FILTER (WHERE b.status = 'Hoàn thành'))::int AS done_count
+             (COUNT(b.id) FILTER (WHERE b.status = 'Hoàn thành'))::int AS done_count,
+             COALESCE(SUM(b.effort), 0)::int AS total_effort,
+             COALESCE(SUM(b.effort) FILTER (WHERE b.status = 'Hoàn thành'), 0)::int AS done_effort,
+             (ph.end_date IS NOT NULL
+              AND ph.end_date < (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+              AND ph.status <> 'Hoàn thành') AS is_overdue
       FROM phases ph
       LEFT JOIN backlog_items b ON b.phase_id = ph.id
       WHERE ph.project_id = ${projectId}

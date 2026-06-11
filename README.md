@@ -31,7 +31,12 @@ bấm **"✨ Gợi ý bằng AI"** để Google Gemini đọc tài liệu + nộ
   *Giá trị kinh doanh*, *Công sức*, xếp nhóm **Làm ngay (Now) / Sắp tới (Next) / Để sau (Later)**;
   nút **✨ AI viết User story & Tiêu chí** (Gemini vai PO, dựa trên tài liệu dự án).
 - **🗺️ Giai đoạn phát triển** — mỗi dự án có lộ trình giai đoạn riêng (GĐ1 MVP, GĐ2...):
-  mục tiêu, thời gian, trạng thái, tiến độ tự tính theo số hạng mục backlog đã hoàn thành.
+  mục tiêu, thời gian, trạng thái, **cảnh báo trễ hạn**, tiến độ tự tính **theo công sức**.
+- **🎯 Ma trận ưu tiên** — biểu đồ Giá trị × Công sức; mỗi hạng mục là 1 điểm, góc
+  "giá trị cao + công sức nhỏ" = nên làm ngay; bấm điểm để mở hạng mục.
+- **📅 Roadmap** — các giai đoạn của mọi dự án trên cùng trục thời gian (theo tháng).
+- **🧭 AI đánh giá hướng sản phẩm** (nút ở Tổng quan PO) — Gemini đọc backlog + giai
+  đoạn + tài liệu rồi đánh giá hướng đi, sức khỏe, cân đối backlog, rủi ro và 3 đề xuất ưu tiên.
 
 ---
 
