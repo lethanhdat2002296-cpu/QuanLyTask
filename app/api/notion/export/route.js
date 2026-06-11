@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth";
 import { sql, ensureSchema } from "@/lib/db";
 import { serverError } from "@/lib/api";
-import { createNotionExportPage, isNotionConfigured } from "@/lib/notion";
+import { upsertNotionExportPage, isNotionConfigured } from "@/lib/notion";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +58,8 @@ export async function POST(request) {
 
     let title = "";
     let sections = [];
+    let existingPageId = null;
+    let table = null;
     if (type === "task") {
       const rows = await sql`
         SELECT t.*, t.end_date::text AS end_date, p.name AS project_name, p.user_id
@@ -68,6 +70,8 @@ export async function POST(request) {
       if (!row) return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
       title = `[Task] ${row.title || row.customer_task || "Không tiêu đề"}`;
       sections = sectionsFromTask(row);
+      existingPageId = row.notion_page_id || null;
+      table = "tasks";
     } else {
       const rows = await sql`
         SELECT b.*, p.name AS project_name, p.user_id, ph.name AS phase_name
@@ -82,11 +86,13 @@ export async function POST(request) {
       }
       title = `[Backlog] ${row.title}`;
       sections = sectionsFromBacklog(row);
+      existingPageId = row.notion_page_id || null;
+      table = "backlog_items";
     }
 
-    let page;
+    let result;
     try {
-      page = await createNotionExportPage({ title, sections });
+      result = await upsertNotionExportPage({ pageId: existingPageId, title, sections });
     } catch (notionErr) {
       // Hiện NGUYÊN VĂN lỗi Notion + gợi ý, thay vì giấu sau "Lỗi máy chủ" chung chung.
       const msg = String(notionErr?.message || "Không xuất được sang Notion.");
@@ -103,7 +109,16 @@ export async function POST(request) {
       }
       return NextResponse.json({ error: "Lỗi Notion: " + msg + hint }, { status: 502 });
     }
-    return NextResponse.json({ ok: true, pageId: page.id, url: page.url });
+
+    // Lưu lại notion_page_id (khi tạo mới) để lần sau CẬP NHẬT đúng page đó.
+    if (result.id && result.id !== existingPageId) {
+      if (table === "tasks") {
+        await sql`UPDATE tasks SET notion_page_id = ${result.id} WHERE id = ${id}`;
+      } else {
+        await sql`UPDATE backlog_items SET notion_page_id = ${result.id} WHERE id = ${id}`;
+      }
+    }
+    return NextResponse.json({ ok: true, url: result.url, updated: result.updated });
   } catch (e) {
     return serverError(e);
   }

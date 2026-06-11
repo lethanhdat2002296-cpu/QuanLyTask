@@ -26,6 +26,7 @@ export default function MyTasksPage() {
   const [modalTask, setModalTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [deleteTaskTarget, setDeleteTaskTarget] = useState(null);
+  const [notice, setNotice] = useState(null); // { text, url } sau khi xuất Notion
 
   function buildQuery() {
     const p = new URLSearchParams();
@@ -92,6 +93,7 @@ export default function MyTasksPage() {
   }
   async function exportNotion(task) {
     setError("");
+    setNotice(null);
     const res = await fetch("/api/notion/export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -102,7 +104,10 @@ export default function MyTasksPage() {
       setError(data.error || "Không xuất được sang Notion");
       return;
     }
-    if (data.url) window.open(data.url, "_blank", "noopener,noreferrer");
+    setNotice({
+      text: data.updated ? "Đã cập nhật trên Notion ✓" : "Đã tạo trên Notion ✓",
+      url: data.url,
+    });
   }
   function openEdit(task) {
     setModalTask(task);
@@ -131,6 +136,24 @@ export default function MyTasksPage() {
         </p>
 
         {error && <div className="alert">{error}</div>}
+        {notice && (
+          <div
+            className="alert"
+            style={{ background: "#f0fdf4", color: "#166534", borderColor: "#bbf7d0" }}
+          >
+            {notice.text}
+            {notice.url && (
+              <a
+                href={notice.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ marginLeft: 10, fontWeight: 600, color: "#166534" }}
+              >
+                Mở Notion ↗
+              </a>
+            )}
+          </div>
+        )}
 
         <div className="card" style={{ marginBottom: 16 }}>
           <input

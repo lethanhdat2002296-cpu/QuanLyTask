@@ -73,6 +73,7 @@ async function main() {
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS doc_link TEXT NOT NULL DEFAULT ''`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ`;
   await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority SMALLINT NOT NULL DEFAULT 2`;
+  await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS notion_page_id TEXT`;
   await sql`UPDATE tasks SET completed_at = updated_at WHERE status = 'Hoàn thành' AND completed_at IS NULL`;
   await sql`CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`;
@@ -140,6 +141,7 @@ async function main() {
     )
   `;
   await sql`ALTER TABLE backlog_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE backlog_items ADD COLUMN IF NOT EXISTS notion_page_id TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS idx_backlog_project ON backlog_items(project_id)`;
 
   console.log(
