@@ -84,7 +84,25 @@ export async function POST(request) {
       sections = sectionsFromBacklog(row);
     }
 
-    const page = await createNotionExportPage({ title, sections });
+    let page;
+    try {
+      page = await createNotionExportPage({ title, sections });
+    } catch (notionErr) {
+      // Hiện NGUYÊN VĂN lỗi Notion + gợi ý, thay vì giấu sau "Lỗi máy chủ" chung chung.
+      const msg = String(notionErr?.message || "Không xuất được sang Notion.");
+      console.error("Notion export lỗi:", msg);
+      let hint = "";
+      if (/find database|could not find|not shared|share/i.test(msg)) {
+        hint =
+          " → Kiểm tra: đã 'Add connections' database cho integration chưa? Database ID có đúng (32 ký tự) không?";
+      } else if (/unauthorized|api token|invalid token|401/i.test(msg)) {
+        hint = " → Token Notion có thể sai hoặc đã bị thu hồi.";
+      } else if (/is not a property|property|title/i.test(msg)) {
+        hint =
+          " → Cột tiêu đề của database không tên 'Name'. Đặt biến NOTION_TITLE_PROPERTY = tên cột tiêu đề.";
+      }
+      return NextResponse.json({ error: "Lỗi Notion: " + msg + hint }, { status: 502 });
+    }
     return NextResponse.json({ ok: true, pageId: page.id, url: page.url });
   } catch (e) {
     return serverError(e);
