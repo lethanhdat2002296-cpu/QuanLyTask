@@ -9,7 +9,8 @@
     "start": "next start",
     "init-db": "node scripts/init-db.mjs",
     "create-user": "node scripts/create-user.mjs",
-    "create-admin": "node scripts/create-admin.mjs"
+    "create-admin": "node scripts/create-admin.mjs",
+    "smoke-po": "node scripts/smoke-po.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",

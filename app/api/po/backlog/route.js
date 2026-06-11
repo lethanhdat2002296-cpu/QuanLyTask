@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema, canAccessProject } from "@/lib/db";
+import { sql, ensureSchema, canAccessProject, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { serverError } from "@/lib/api";
 import {
@@ -36,7 +36,7 @@ export async function GET(request) {
       SELECT b.id, b.project_id, p.name AS project_name,
              b.phase_id, ph.name AS phase_name,
              b.title, b.user_story, b.acceptance_criteria,
-             b.business_value, b.effort, b.bucket, b.status, b.note,
+             b.business_value, b.effort, b.bucket, b.status, b.sort_order, b.note,
              b.created_at, b.updated_at
       FROM backlog_items b
       JOIN projects p ON p.id = b.project_id
@@ -49,7 +49,7 @@ export async function GET(request) {
              b.title ILIKE ${like} OR b.user_story ILIKE ${like} OR b.note ILIKE ${like}
         ))
       ORDER BY CASE b.bucket WHEN 'now' THEN 1 WHEN 'next' THEN 2 ELSE 3 END,
-               b.business_value ASC, b.effort ASC, b.created_at DESC
+               b.sort_order ASC, b.business_value ASC, b.effort ASC, b.created_at DESC
     `;
     return NextResponse.json({ items, isAdmin: auth.isAdmin });
   } catch (e) {
@@ -108,16 +108,31 @@ export async function POST(request) {
       }
     }
 
+    const orderRows = await sql`
+      SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
+      FROM backlog_items
+      WHERE project_id = ${projectId} AND bucket = ${bucket}
+    `;
+    const sortOrder = Number(orderRows[0]?.next_order || 0);
+
     const rows = await sql`
       INSERT INTO backlog_items
         (project_id, phase_id, title, user_story, acceptance_criteria,
-         business_value, effort, bucket, status, note)
+         business_value, effort, bucket, status, sort_order, note)
       VALUES
         (${projectId}, ${phaseId}, ${title.slice(0, 200)},
          ${String(body.user_story || "")}, ${String(body.acceptance_criteria || "")},
-         ${businessValue}, ${effort}, ${bucket}, ${status}, ${String(body.note || "")})
+         ${businessValue}, ${effort}, ${bucket}, ${status}, ${sortOrder}, ${String(body.note || "")})
       RETURNING *
     `;
+    const proj = await sql`SELECT name FROM projects WHERE id = ${projectId}`;
+    await logActivity({
+      userId: auth.id,
+      projectId,
+      projectName: proj[0]?.name,
+      taskLabel: rows[0].title,
+      action: "po_backlog_create",
+    });
     return NextResponse.json({ item: rows[0] }, { status: 201 });
   } catch (e) {
     return serverError(e);

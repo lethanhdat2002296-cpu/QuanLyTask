@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema } from "@/lib/db";
+import { sql, ensureSchema, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeDate } from "@/lib/api";
 import { PHASE_STATUSES } from "@/lib/constants";
@@ -62,6 +62,25 @@ export async function PUT(request, { params }) {
                 start_date::text AS start_date, end_date::text AS end_date,
                 status, created_at
     `;
+    if (
+      phase.name !== name ||
+      phase.goal !== goal ||
+      phase.status !== status ||
+      String(phase.start_date || "") !== String(startDate || "") ||
+      String(phase.end_date || "") !== String(endDate || "")
+    ) {
+      const proj = await sql`SELECT name FROM projects WHERE id = ${phase.project_id}`;
+      await logActivity({
+        userId: auth.id,
+        projectId: phase.project_id,
+        projectName: proj[0]?.name,
+        taskLabel: name,
+        action: phase.status !== status ? "po_phase_status_change" : "po_phase_update",
+        field: phase.status !== status ? "status" : null,
+        oldValue: phase.status !== status ? phase.status : null,
+        newValue: phase.status !== status ? status : null,
+      });
+    }
     return NextResponse.json({ phase: rows[0] });
   } catch (e) {
     return serverError(e);
@@ -84,6 +103,14 @@ export async function DELETE(_request, { params }) {
         { status: 404 }
       );
     }
+    const proj = await sql`SELECT name FROM projects WHERE id = ${phase.project_id}`;
+    await logActivity({
+      userId: auth.id,
+      projectId: phase.project_id,
+      projectName: proj[0]?.name,
+      taskLabel: phase.name,
+      action: "po_phase_delete",
+    });
     await sql`DELETE FROM phases WHERE id = ${id}`;
     return NextResponse.json({ ok: true });
   } catch (e) {

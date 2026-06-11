@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import PhaseModal from "@/components/PhaseModal";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { PHASE_STATUSES, PHASE_STATUS_COLORS } from "@/lib/constants";
 
 function fmtDate(v) {
@@ -22,6 +23,7 @@ export default function PhasesPage() {
   const [error, setError] = useState("");
   const [modalPhase, setModalPhase] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [deletePhaseTarget, setDeletePhaseTarget] = useState(null);
 
   useEffect(() => {
     fetch("/api/projects")
@@ -78,9 +80,8 @@ export default function PhasesPage() {
     load();
   }
   async function deletePhase(id) {
-    if (!confirm("Xóa giai đoạn này? (Hạng mục backlog gắn vào sẽ tự bỏ gắn)"))
-      return;
     await fetch(`/api/po/phases/${id}`, { method: "DELETE" });
+    setDeletePhaseTarget(null);
     load();
   }
   function openCreate() {
@@ -264,7 +265,7 @@ export default function PhasesPage() {
                     </button>
                     <button
                       className="btn btn-sm btn-danger"
-                      onClick={() => deletePhase(ph.id)}
+                      onClick={() => setDeletePhaseTarget(ph)}
                     >
                       Xóa
                     </button>
@@ -284,6 +285,19 @@ export default function PhasesPage() {
           onSaved={onSaved}
         />
       )}
+      <ConfirmDialog
+        open={Boolean(deletePhaseTarget)}
+        title="Xóa giai đoạn?"
+        message={
+          deletePhaseTarget
+            ? `Giai đoạn "${deletePhaseTarget.name}" sẽ bị xóa. Hạng mục backlog đang gắn vào sẽ tự bỏ gắn.`
+            : ""
+        }
+        confirmText="Xóa"
+        danger
+        onCancel={() => setDeletePhaseTarget(null)}
+        onConfirm={() => deletePhase(deletePhaseTarget.id)}
+      />
     </AppShell>
   );
 }

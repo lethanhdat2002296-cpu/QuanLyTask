@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function ProjectsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -63,10 +65,9 @@ export default function ProjectsPage() {
     }
   }
 
-  async function deleteProject(e, id) {
-    e.stopPropagation();
-    if (!confirm("Xóa dự án này cùng toàn bộ task bên trong?")) return;
+  async function deleteProject(id) {
     await fetch(`/api/projects/${id}`, { method: "DELETE" });
+    setDeleteProjectTarget(null);
     load();
   }
 
@@ -127,7 +128,10 @@ export default function ProjectsPage() {
                 </span>
                 <button
                   className="btn btn-sm btn-danger"
-                  onClick={(e) => deleteProject(e, p.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteProjectTarget(p);
+                  }}
                 >
                   Xóa
                 </button>
@@ -177,6 +181,20 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteProjectTarget)}
+        title="Xóa dự án?"
+        message={
+          deleteProjectTarget
+            ? `Dự án "${deleteProjectTarget.name}" và toàn bộ task bên trong sẽ bị xóa.`
+            : ""
+        }
+        confirmText="Xóa dự án"
+        danger
+        requireText={deleteProjectTarget?.name || ""}
+        onCancel={() => setDeleteProjectTarget(null)}
+        onConfirm={() => deleteProject(deleteProjectTarget.id)}
+      />
     </AppShell>
   );
 }

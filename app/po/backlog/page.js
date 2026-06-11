@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import BacklogCard from "@/components/BacklogCard";
 import BacklogModal from "@/components/BacklogModal";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { BACKLOG_BUCKETS, BACKLOG_STATUSES } from "@/lib/constants";
 
 export default function BacklogPage() {
@@ -22,6 +23,7 @@ export default function BacklogPage() {
 
   const [modalItem, setModalItem] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [deleteItemTarget, setDeleteItemTarget] = useState(null);
 
   function buildQuery() {
     const p = new URLSearchParams();
@@ -85,8 +87,45 @@ export default function BacklogPage() {
     load();
   }
   async function deleteItem(id) {
-    if (!confirm("Xóa hạng mục này?")) return;
     await fetch(`/api/po/backlog/${id}`, { method: "DELETE" });
+    setDeleteItemTarget(null);
+    load();
+  }
+  async function exportNotion(item) {
+    setError("");
+    const res = await fetch("/api/notion/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "backlog", id: item.id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Không xuất được sang Notion");
+      return;
+    }
+    if (data.url) window.open(data.url, "_blank", "noopener,noreferrer");
+  }
+  async function moveItem(item, dir) {
+    const sameBucket = items.filter((i) => i.bucket === item.bucket);
+    const idx = sameBucket.findIndex((i) => i.id === item.id);
+    const nextIdx = idx + dir;
+    if (idx < 0 || nextIdx < 0 || nextIdx >= sameBucket.length) return;
+    const reordered = [...sameBucket];
+    [reordered[idx], reordered[nextIdx]] = [reordered[nextIdx], reordered[idx]];
+    const res = await fetch("/api/po/backlog/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: item.project_id,
+        bucket: item.bucket,
+        orderedIds: reordered.map((i) => i.id),
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Không sắp xếp được backlog");
+      return;
+    }
     load();
   }
   function openCreate() {
@@ -227,9 +266,13 @@ export default function BacklogPage() {
                 item={i}
                 showProject={showProject}
                 onEdit={openEdit}
-                onDelete={deleteItem}
+                onDelete={setDeleteItemTarget}
                 onBucketChange={changeBucket}
                 onStatusChange={changeStatus}
+                onMove={moveItem}
+                onExportNotion={exportNotion}
+                canMoveUp={g.items.findIndex((x) => x.id === i.id) > 0}
+                canMoveDown={g.items.findIndex((x) => x.id === i.id) < g.items.length - 1}
               />
             ))}
           </div>
@@ -241,9 +284,13 @@ export default function BacklogPage() {
             item={i}
             showProject={showProject}
             onEdit={openEdit}
-            onDelete={deleteItem}
+            onDelete={setDeleteItemTarget}
             onBucketChange={changeBucket}
             onStatusChange={changeStatus}
+            onMove={moveItem}
+            onExportNotion={exportNotion}
+            canMoveUp={items.filter((x) => x.bucket === i.bucket).findIndex((x) => x.id === i.id) > 0}
+            canMoveDown={items.filter((x) => x.bucket === i.bucket).findIndex((x) => x.id === i.id) < items.filter((x) => x.bucket === i.bucket).length - 1}
           />
         ))
       )}
@@ -257,6 +304,15 @@ export default function BacklogPage() {
           onSaved={onSaved}
         />
       )}
+      <ConfirmDialog
+        open={Boolean(deleteItemTarget)}
+        title="Xóa hạng mục backlog?"
+        message={deleteItemTarget ? `Hạng mục "${deleteItemTarget.title}" sẽ bị xóa khỏi backlog.` : ""}
+        confirmText="Xóa"
+        danger
+        onCancel={() => setDeleteItemTarget(null)}
+        onConfirm={() => deleteItem(deleteItemTarget.id)}
+      />
     </AppShell>
   );
 }

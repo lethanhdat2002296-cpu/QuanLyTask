@@ -29,8 +29,38 @@ function describe(a) {
       color: STATUS_COLORS[a.new_value] || "#6b7280",
     };
   }
+  if (a.action === "po_backlog_create")
+    return { icon: "📦", text: "Tạo backlog", color: "#2563eb" };
+  if (a.action === "po_backlog_update")
+    return { icon: "✏️", text: "Sửa backlog", color: "#4f46e5" };
+  if (a.action === "po_backlog_delete")
+    return { icon: "🗑️", text: "Xóa backlog", color: "#dc2626" };
+  if (a.action === "po_backlog_bucket_change")
+    return { icon: "📌", text: `${a.old_value || "?"} → ${a.new_value || "?"}`, color: "#d97706" };
+  if (a.action === "po_backlog_status_change")
+    return { icon: "🔄", text: `${a.old_value || "?"} → ${a.new_value || "?"}`, color: "#2563eb" };
+  if (a.action === "po_phase_create")
+    return { icon: "🗺️", text: "Tạo giai đoạn", color: "#2563eb" };
+  if (a.action === "po_phase_update")
+    return { icon: "✏️", text: "Sửa giai đoạn", color: "#4f46e5" };
+  if (a.action === "po_phase_delete")
+    return { icon: "🗑️", text: "Xóa giai đoạn", color: "#dc2626" };
+  if (a.action === "po_phase_status_change")
+    return { icon: "🔄", text: `${a.old_value || "?"} → ${a.new_value || "?"}`, color: "#2563eb" };
   return { icon: "•", text: a.action, color: "#6b7280" };
 }
+
+const ACTION_FILTERS = [
+  { value: "", label: "Tất cả" },
+  { value: "create", label: "Tạo task" },
+  { value: "delete", label: "Xóa task" },
+  { value: "status_change", label: "Đổi trạng thái task" },
+  { value: "po_backlog_create", label: "Tạo backlog" },
+  { value: "po_backlog_bucket_change", label: "Đổi nhóm backlog" },
+  { value: "po_backlog_status_change", label: "Đổi trạng thái backlog" },
+  { value: "po_phase_create", label: "Tạo giai đoạn" },
+  { value: "po_phase_status_change", label: "Đổi trạng thái giai đoạn" },
+];
 
 export default function ActivityPage() {
   const router = useRouter();
@@ -41,6 +71,7 @@ export default function ActivityPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [projectF, setProjectF] = useState("Tất cả");
+  const [actionF, setActionF] = useState("");
 
   function preset(days) {
     if (days === null) {
@@ -62,6 +93,7 @@ export default function ActivityPage() {
       if (from) p.set("from", from);
       if (to) p.set("to", to);
       if (projectF !== "Tất cả") p.set("project", projectF);
+      if (actionF) p.set("action", actionF);
       const res = await fetch("/api/activity?" + p.toString());
       if (res.status === 401) {
         router.replace("/login");
@@ -86,7 +118,7 @@ export default function ActivityPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, projectF]);
+  }, [from, to, projectF, actionF]);
 
   return (
     <AppShell>
@@ -133,6 +165,21 @@ export default function ActivityPage() {
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-item">
+              <span className="muted">Loại:</span>
+              <select
+                className="select"
+                style={{ width: "auto" }}
+                value={actionF}
+                onChange={(e) => setActionF(e.target.value)}
+              >
+                {ACTION_FILTERS.map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
                   </option>
                 ))}
               </select>

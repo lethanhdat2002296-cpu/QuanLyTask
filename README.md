@@ -75,6 +75,14 @@ GEMINI_API_KEY="..."
 | `APP_URL` | nên có | URL gốc để tạo link trong email (an toàn hơn header) |
 | `SMTP_*` | cho quên mật khẩu | Cấu hình gửi email; thiếu thì chức năng quên MK báo "chưa cấu hình" |
 | `GEMINI_API_KEY` | cho "Gợi ý AI" | Key Google Gemini; thiếu thì nút "Gợi ý AI" báo "chưa cấu hình" |
+| `NOTION_TOKEN` + `NOTION_DATABASE_ID` | cho "Xuất Notion" | Token integration + ID database Notion; thiếu thì nút "Xuất Notion" báo "chưa cấu hình" |
+
+> **Tích hợp Notion (xuất task/backlog — một chiều):**
+> 1. Vào https://www.notion.so/my-integrations → **New integration** → copy **Internal Integration Token** (đó là `NOTION_TOKEN`).
+> 2. Tạo (hoặc chọn) một **database** trong Notion để chứa dữ liệu xuất ra. Mở database → menu **•••** → **Connections** → thêm integration vừa tạo (bước "share database cho integration").
+> 3. Lấy **Database ID** từ URL của database (đoạn 32 ký tự trước dấu `?`) → đó là `NOTION_DATABASE_ID`.
+> 4. Nếu cột tiêu đề của database không tên là `Name`, đặt thêm `NOTION_TITLE_PROPERTY="<tên cột tiêu đề>"`.
+> 5. Bản hiện tại xuất **một chiều** (app → Notion): mỗi lần bấm "Xuất Notion" tạo 1 page mới. Chưa đồng bộ hai chiều.
 
 > Tạo `JWT_SECRET` ngẫu nhiên:
 > ```bash

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema, canAccessProject } from "@/lib/db";
+import { sql, ensureSchema, canAccessProject, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { serverError, normalizeDate } from "@/lib/api";
 import { PHASE_STATUSES, DEFAULT_PHASE_STATUS } from "@/lib/constants";
@@ -84,6 +84,14 @@ export async function POST(request) {
                 start_date::text AS start_date, end_date::text AS end_date,
                 status, created_at
     `;
+    const proj = await sql`SELECT name FROM projects WHERE id = ${projectId}`;
+    await logActivity({
+      userId: auth.id,
+      projectId,
+      projectName: proj[0]?.name,
+      taskLabel: rows[0].name,
+      action: "po_phase_create",
+    });
     return NextResponse.json({ phase: rows[0] }, { status: 201 });
   } catch (e) {
     return serverError(e);

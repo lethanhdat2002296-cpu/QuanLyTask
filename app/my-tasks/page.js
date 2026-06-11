@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import TaskCard from "@/components/TaskCard";
 import TaskModal from "@/components/TaskModal";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { TASK_STATUSES } from "@/lib/constants";
 
 export default function MyTasksPage() {
@@ -24,6 +25,7 @@ export default function MyTasksPage() {
 
   const [modalTask, setModalTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [deleteTaskTarget, setDeleteTaskTarget] = useState(null);
 
   function buildQuery() {
     const p = new URLSearchParams();
@@ -84,9 +86,23 @@ export default function MyTasksPage() {
     load();
   }
   async function deleteTask(taskId) {
-    if (!confirm("Xóa task này?")) return;
     await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+    setDeleteTaskTarget(null);
     load();
+  }
+  async function exportNotion(task) {
+    setError("");
+    const res = await fetch("/api/notion/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "task", id: task.id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Không xuất được sang Notion");
+      return;
+    }
+    if (data.url) window.open(data.url, "_blank", "noopener,noreferrer");
   }
   function openEdit(task) {
     setModalTask(task);
@@ -211,8 +227,9 @@ export default function MyTasksPage() {
               task={t}
               showProject
               onEdit={openEdit}
-              onDelete={deleteTask}
+              onDelete={setDeleteTaskTarget}
               onStatusChange={changeStatus}
+              onExportNotion={exportNotion}
             />
           ))
         )}
@@ -225,6 +242,15 @@ export default function MyTasksPage() {
           onSaved={onSaved}
         />
       )}
+      <ConfirmDialog
+        open={Boolean(deleteTaskTarget)}
+        title="Xóa task?"
+        message={deleteTaskTarget ? `Task "${deleteTaskTarget.title || deleteTaskTarget.customer_task}" sẽ bị xóa.` : ""}
+        confirmText="Xóa"
+        danger
+        onCancel={() => setDeleteTaskTarget(null)}
+        onConfirm={() => deleteTask(deleteTaskTarget.id)}
+      />
     </AppShell>
   );
 }

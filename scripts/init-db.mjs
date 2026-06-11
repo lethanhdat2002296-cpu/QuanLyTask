@@ -133,11 +133,13 @@ async function main() {
       effort SMALLINT NOT NULL DEFAULT 2,
       bucket TEXT NOT NULL DEFAULT 'next',
       status TEXT NOT NULL DEFAULT 'Ý tưởng',
+      sort_order INTEGER NOT NULL DEFAULT 0,
       note TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  await sql`ALTER TABLE backlog_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0`;
   await sql`CREATE INDEX IF NOT EXISTS idx_backlog_project ON backlog_items(project_id)`;
 
   console.log(

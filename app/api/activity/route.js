@@ -19,6 +19,7 @@ export async function GET(request) {
     const from = sp.get("from") || null;
     const to = sp.get("to") || null;
     const projectId = Number(sp.get("project")) || null;
+    const action = sp.get("action") || null;
 
     const rows = await sql`
       SELECT id, task_id, project_id, project_name, task_label,
@@ -30,6 +31,7 @@ export async function GET(request) {
         AND (${to}::text IS NULL
              OR (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= ${to}::date)
         AND (${projectId}::int IS NULL OR project_id = ${projectId})
+        AND (${action}::text IS NULL OR action = ${action})
       ORDER BY created_at DESC
       LIMIT 500
     `;

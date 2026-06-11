@@ -74,15 +74,13 @@ export default function PoDashboardPage() {
   const [analyzeErr, setAnalyzeErr] = useState("");
 
   useEffect(() => {
-    Promise.all([fetch("/api/po/backlog"), fetch("/api/projects")])
-      .then(async ([bRes, pRes]) => {
-        if (bRes.status === 401 || pRes.status === 401) {
+    fetch("/api/projects")
+      .then(async (pRes) => {
+        if (pRes.status === 401) {
           router.replace("/login");
           return;
         }
-        const b = await bRes.json();
         const p = await pRes.json();
-        setItems(b.items || []);
         const ps = p.projects || [];
         setProjects(ps);
         if (ps[0]) setProjectF(String(ps[0].id));
@@ -92,15 +90,33 @@ export default function PoDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Giai đoạn của dự án đang chọn
+  // Backlog + giai đoạn của dự án đang chọn
   useEffect(() => {
-    if (!projectF) return;
+    if (!projectF) {
+      setItems([]);
+      setPhases([]);
+      return;
+    }
+    setLoading(true);
     setAnalysis(null); // đổi dự án thì bỏ kết quả phân tích cũ
     setAnalyzeErr("");
-    fetch(`/api/po/phases?project=${projectF}`)
-      .then((r) => (r.ok ? r.json() : { phases: [] }))
-      .then((d) => setPhases(d.phases || []))
-      .catch(() => {});
+    Promise.all([
+      fetch(`/api/po/backlog?project=${projectF}`),
+      fetch(`/api/po/phases?project=${projectF}`),
+    ])
+      .then(async ([bRes, phRes]) => {
+        if (bRes.status === 401 || phRes.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        const b = bRes.ok ? await bRes.json() : { items: [] };
+        const ph = phRes.ok ? await phRes.json() : { phases: [] };
+        setItems(b.items || []);
+        setPhases(ph.phases || []);
+      })
+      .catch(() => setError("Không tải được số liệu PO"))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectF]);
 
   async function analyze() {
@@ -158,6 +174,11 @@ export default function PoDashboardPage() {
 
       {loading ? (
         <p className="muted">Đang tải...</p>
+      ) : projects.length === 0 ? (
+        <div className="empty-state">
+          <p style={{ fontSize: 40, margin: 0 }}>🗂️</p>
+          <p>Chưa có dự án nào. Hãy tạo dự án ở chế độ BA trước khi dùng PO.</p>
+        </div>
       ) : (
         <>
           <div className="stat-grid" style={{ marginBottom: 20 }}>

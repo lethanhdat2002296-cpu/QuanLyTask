@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -11,6 +12,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [denied, setDenied] = useState(false);
+  const [toggleTarget, setToggleTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [resetTarget, setResetTarget] = useState(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function load() {
     setLoading(true);
@@ -36,8 +42,9 @@ export default function AdminPage() {
   }, []);
 
   async function toggleAdmin(u) {
-    const action = u.is_admin ? "bỏ quyền admin của" : "cấp quyền admin cho";
-    if (!confirm(`Bạn chắc chắn ${action} "${u.username}"?`)) return;
+    if (!u) return;
+    setError("");
+    setNotice("");
     const res = await fetch(`/api/admin/users/${u.id}/toggle-admin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -45,15 +52,19 @@ export default function AdminPage() {
     });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error || "Thất bại");
+      setError(d.error || "Thất bại");
       return;
     }
+    setToggleTarget(null);
     load();
   }
 
   async function resetPassword(u) {
-    const pw = prompt(`Nhập mật khẩu MỚI cho "${u.username}" (tối thiểu 6 ký tự):`);
+    if (!u) return;
+    const pw = resetPasswordValue;
     if (!pw) return;
+    setError("");
+    setNotice("");
     const res = await fetch(`/api/admin/users/${u.id}/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -61,25 +72,25 @@ export default function AdminPage() {
     });
     const d = await res.json();
     if (!res.ok) {
-      alert(d.error || "Thất bại");
+      setError(d.error || "Thất bại");
       return;
     }
-    alert(`Đã đặt lại mật khẩu cho "${u.username}".`);
+    setResetTarget(null);
+    setResetPasswordValue("");
+    setNotice(`Đã đặt lại mật khẩu cho "${u.username}".`);
   }
 
   async function deleteUser(u) {
-    if (
-      !confirm(
-        `Xóa người dùng "${u.username}"? Toàn bộ dự án & task của họ cũng bị xóa. Không thể hoàn tác.`
-      )
-    )
-      return;
+    if (!u) return;
+    setError("");
+    setNotice("");
     const res = await fetch(`/api/admin/users/${u.id}`, { method: "DELETE" });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error || "Thất bại");
+      setError(d.error || "Thất bại");
       return;
     }
+    setDeleteTarget(null);
     load();
   }
 
@@ -105,6 +116,8 @@ export default function AdminPage() {
         ) : error ? (
           <div className="alert">{error}</div>
         ) : (
+          <>
+          {notice && <div className="alert success">{notice}</div>}
           <div className="card" style={{ padding: 0, overflowX: "auto" }}>
             <table className="table">
               <thead>
@@ -155,13 +168,16 @@ export default function AdminPage() {
                         >
                           <button
                             className="btn btn-sm"
-                            onClick={() => resetPassword(u)}
+                            onClick={() => {
+                              setResetTarget(u);
+                              setResetPasswordValue("");
+                            }}
                           >
                             Đặt lại MK
                           </button>
                           <button
                             className="btn btn-sm"
-                            onClick={() => toggleAdmin(u)}
+                            onClick={() => setToggleTarget(u)}
                             disabled={isSelf}
                             title={isSelf ? "Không thể đổi quyền của chính mình" : ""}
                           >
@@ -169,7 +185,7 @@ export default function AdminPage() {
                           </button>
                           <button
                             className="btn btn-sm btn-danger"
-                            onClick={() => deleteUser(u)}
+                            onClick={() => setDeleteTarget(u)}
                             disabled={isSelf}
                             title={isSelf ? "Không thể tự xóa" : ""}
                           >
@@ -183,7 +199,67 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
+      {resetTarget && (
+        <div className="modal-overlay" onClick={() => setResetTarget(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Đặt lại mật khẩu</h2>
+            <p className="muted" style={{ marginTop: -6 }}>
+              Nhập mật khẩu mới cho "{resetTarget.username}".
+            </p>
+            <div className="field">
+              <label>Mật khẩu mới *</label>
+              <input
+                className="input"
+                type="password"
+                value={resetPasswordValue}
+                onChange={(e) => setResetPasswordValue(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={() => setResetTarget(null)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={resetPasswordValue.length < 6}
+                onClick={() => resetPassword(resetTarget)}
+              >
+                Đặt lại mật khẩu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <ConfirmDialog
+        open={Boolean(toggleTarget)}
+        title={toggleTarget?.is_admin ? "Bỏ quyền admin?" : "Cấp quyền admin?"}
+        message={
+          toggleTarget
+            ? `Xác nhận thay đổi quyền của "${toggleTarget.username}".`
+            : ""
+        }
+        confirmText={toggleTarget?.is_admin ? "Bỏ admin" : "Cấp admin"}
+        onCancel={() => setToggleTarget(null)}
+        onConfirm={() => toggleAdmin(toggleTarget)}
+      />
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Xóa người dùng?"
+        message={
+          deleteTarget
+            ? `Người dùng "${deleteTarget.username}" và toàn bộ dự án/task của họ sẽ bị xóa.`
+            : ""
+        }
+        confirmText="Xóa người dùng"
+        danger
+        requireText={deleteTarget?.username || ""}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteUser(deleteTarget)}
+      />
     </AppShell>
   );
 }

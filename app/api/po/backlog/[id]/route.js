@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql, ensureSchema } from "@/lib/db";
+import { sql, ensureSchema, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { serverError } from "@/lib/api";
 import { BACKLOG_BUCKETS, BACKLOG_STATUSES } from "@/lib/constants";
@@ -88,6 +88,21 @@ export async function PUT(request, { params }) {
       WHERE id = ${id}
       RETURNING *
     `;
+    if (
+      item.title !== title ||
+      item.status !== status ||
+      item.bucket !== bucket ||
+      Number(item.phase_id || 0) !== Number(phaseId || 0)
+    ) {
+      const proj = await sql`SELECT name FROM projects WHERE id = ${item.project_id}`;
+      await logActivity({
+        userId: auth.id,
+        projectId: item.project_id,
+        projectName: proj[0]?.name,
+        taskLabel: title,
+        action: "po_backlog_update",
+      });
+    }
     return NextResponse.json({ item: rows[0] });
   } catch (e) {
     return serverError(e);
@@ -115,12 +130,34 @@ export async function PATCH(request, { params }) {
     const status = BACKLOG_STATUSES.includes(body.status)
       ? body.status
       : item.status;
+    let sortOrder = item.sort_order;
+    if (bucket !== item.bucket) {
+      const orderRows = await sql`
+        SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
+        FROM backlog_items
+        WHERE project_id = ${item.project_id} AND bucket = ${bucket}
+      `;
+      sortOrder = Number(orderRows[0]?.next_order || 0);
+    }
     const rows = await sql`
       UPDATE backlog_items
-      SET bucket = ${bucket}, status = ${status}, updated_at = now()
+      SET bucket = ${bucket}, status = ${status}, sort_order = ${sortOrder}, updated_at = now()
       WHERE id = ${id}
       RETURNING *
     `;
+    if (bucket !== item.bucket || status !== item.status) {
+      const proj = await sql`SELECT name FROM projects WHERE id = ${item.project_id}`;
+      await logActivity({
+        userId: auth.id,
+        projectId: item.project_id,
+        projectName: proj[0]?.name,
+        taskLabel: item.title,
+        action: bucket !== item.bucket ? "po_backlog_bucket_change" : "po_backlog_status_change",
+        field: bucket !== item.bucket ? "bucket" : "status",
+        oldValue: bucket !== item.bucket ? item.bucket : item.status,
+        newValue: bucket !== item.bucket ? bucket : status,
+      });
+    }
     return NextResponse.json({ item: rows[0] });
   } catch (e) {
     return serverError(e);
@@ -143,6 +180,14 @@ export async function DELETE(_request, { params }) {
         { status: 404 }
       );
     }
+    const proj = await sql`SELECT name FROM projects WHERE id = ${item.project_id}`;
+    await logActivity({
+      userId: auth.id,
+      projectId: item.project_id,
+      projectName: proj[0]?.name,
+      taskLabel: item.title,
+      action: "po_backlog_delete",
+    });
     await sql`DELETE FROM backlog_items WHERE id = ${id}`;
     return NextResponse.json({ ok: true });
   } catch (e) {

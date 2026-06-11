@@ -41,6 +41,10 @@ export default function BacklogCard({
   onDelete,
   onBucketChange,
   onStatusChange,
+  onMove,
+  onExportNotion,
+  canMoveUp = false,
+  canMoveDown = false,
   showProject = false,
 }) {
   const [open, setOpen] = useState(false);
@@ -137,9 +141,34 @@ export default function BacklogCard({
             <button className="btn btn-sm" onClick={() => onEdit(item)}>
               Sửa
             </button>
+            {onMove && (
+              <>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => onMove(item, -1)}
+                  disabled={!canMoveUp}
+                  title="Đưa lên trên trong nhóm"
+                >
+                  ↑
+                </button>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => onMove(item, 1)}
+                  disabled={!canMoveDown}
+                  title="Đưa xuống dưới trong nhóm"
+                >
+                  ↓
+                </button>
+              </>
+            )}
+            {onExportNotion && (
+              <button className="btn btn-sm" onClick={() => onExportNotion(item)}>
+                Xuất Notion
+              </button>
+            )}
             <button
               className="btn btn-sm btn-danger"
-              onClick={() => onDelete(item.id)}
+              onClick={() => onDelete(item)}
             >
               Xóa
             </button>

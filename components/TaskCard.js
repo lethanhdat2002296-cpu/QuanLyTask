@@ -51,6 +51,7 @@ export default function TaskCard({
   onEdit,
   onDelete,
   onStatusChange,
+  onExportNotion,
   showProject = false,
 }) {
   const [open, setOpen] = useState(false);
@@ -175,9 +176,14 @@ export default function TaskCard({
             <button className="btn btn-sm" onClick={() => onEdit(task)}>
               Sửa
             </button>
+            {onExportNotion && (
+              <button className="btn btn-sm" onClick={() => onExportNotion(task)}>
+                Xuất Notion
+              </button>
+            )}
             <button
               className="btn btn-sm btn-danger"
-              onClick={() => onDelete(task.id)}
+              onClick={() => onDelete(task)}
             >
               Xóa
             </button>
