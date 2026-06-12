@@ -27,10 +27,17 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      // Vào lại đúng chế độ làm việc đã chọn lần trước (BA hoặc PO)
+      // Ưu tiên quay lại trang đang xem dở (?next=...), nếu không thì
+      // vào đúng chế độ làm việc đã chọn lần trước (BA hoặc PO).
       let dest = "/";
       try {
-        if (localStorage.getItem("workspaceMode") === "po") dest = "/po";
+        const next = new URLSearchParams(window.location.search).get("next");
+        // chỉ nhận đường dẫn nội bộ ("/..." nhưng không phải "//host" mạo danh)
+        if (next && next.startsWith("/") && !next.startsWith("//")) {
+          dest = next;
+        } else if (localStorage.getItem("workspaceMode") === "po") {
+          dest = "/po";
+        }
       } catch {}
       router.replace(dest);
       router.refresh();
@@ -44,7 +51,9 @@ export default function LoginPage() {
     <div className="login-wrap">
       <div className="login-card">
         <h1>📋 Quản Lý Task</h1>
-        <p className="sub">Đăng nhập để tiếp tục</p>
+        <p className="sub">
+          Quản lý task khách hàng (BA) · Backlog &amp; Roadmap sản phẩm (PO)
+        </p>
         {error && <div className="alert">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="field">

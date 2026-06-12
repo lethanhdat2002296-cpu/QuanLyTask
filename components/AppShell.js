@@ -18,6 +18,22 @@ const NAV_PO = [
   { href: "/po/phases", label: "Giai đoạn phát triển", ico: "🗺️" },
 ];
 
+// Cache thông tin đăng nhập trong phiên duyệt web: AppShell remount ở MỖI lần
+// chuyển trang — không cache thì /api/auth/me bị gọi lại liên tục.
+let meCache = null;
+function fetchMe() {
+  if (!meCache) {
+    meCache = fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => (d ? d.user : null))
+      .catch(() => {
+        meCache = null; // lỗi mạng -> lần sau thử lại
+        return null;
+      });
+  }
+  return meCache;
+}
+
 export default function AppShell({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -25,10 +41,11 @@ export default function AppShell({ children }) {
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setMe(d.user))
-      .catch(() => {});
+    let alive = true;
+    fetchMe().then((u) => alive && u && setMe(u));
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Đóng menu khi chuyển trang
@@ -37,7 +54,12 @@ export default function AppShell({ children }) {
   }, [pathname]);
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // mất mạng vẫn đưa về trang đăng nhập, không kẹt lại
+    }
+    meCache = null;
     router.replace("/login");
     router.refresh();
   }

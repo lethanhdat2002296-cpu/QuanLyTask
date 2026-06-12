@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PHASE_STATUSES, DEFAULT_PHASE_STATUS } from "@/lib/constants";
 
 // Modal thêm/sửa giai đoạn phát triển (chế độ PO).
@@ -15,6 +15,15 @@ export default function PhaseModal({ projectId, phase, onClose, onSaved }) {
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Đóng modal bằng phím Esc
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -42,6 +51,8 @@ export default function PhaseModal({ projectId, phase, onClose, onSaved }) {
         return;
       }
       onSaved();
+    } catch {
+      setError("Không kết nối được máy chủ, thử lại sau.");
     } finally {
       setSaving(false);
     }
@@ -73,23 +84,25 @@ export default function PhaseModal({ projectId, phase, onClose, onSaved }) {
               placeholder="VD: Khách đóng gói được hàng và quét serial không lỗi"
             />
           </div>
-          <div className="field">
-            <label>Ngày bắt đầu</label>
-            <input
-              className="input"
-              type="date"
-              value={form.start_date}
-              onChange={(e) => set("start_date", e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label>Ngày kết thúc (dự kiến)</label>
-            <input
-              className="input"
-              type="date"
-              value={form.end_date}
-              onChange={(e) => set("end_date", e.target.value)}
-            />
+          <div className="field-row">
+            <div className="field">
+              <label>Ngày bắt đầu</label>
+              <input
+                className="input"
+                type="date"
+                value={form.start_date}
+                onChange={(e) => set("start_date", e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>Ngày kết thúc (dự kiến)</label>
+              <input
+                className="input"
+                type="date"
+                value={form.end_date}
+                onChange={(e) => set("end_date", e.target.value)}
+              />
+            </div>
           </div>
           <div className="field">
             <label>Trạng thái</label>

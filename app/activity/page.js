@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import { STATUS_COLORS } from "@/lib/constants";
+import { fetchProjectsCached } from "@/lib/clientCache";
 
 function ymd(d) {
   const z = (n) => String(n).padStart(2, "0");
@@ -109,8 +111,7 @@ export default function ActivityPage() {
   }
 
   useEffect(() => {
-    fetch("/api/projects")
-      .then((r) => (r.ok ? r.json() : null))
+    fetchProjectsCached()
       .then((d) => d && setProjects(d.projects || []))
       .catch(() => {});
   }, []);
@@ -199,7 +200,7 @@ export default function ActivityPage() {
         </div>
 
         {loading ? (
-          <p className="muted">Đang tải...</p>
+          <Skeleton />
         ) : items.length === 0 ? (
           <div className="empty-state">
             <p style={{ fontSize: 40, margin: 0 }}>🕒</p>

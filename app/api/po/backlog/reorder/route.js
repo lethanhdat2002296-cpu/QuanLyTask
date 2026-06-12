@@ -36,19 +36,27 @@ export async function POST(request) {
       WHERE project_id = ${projectId} AND bucket = ${bucket}
     `;
     const valid = new Set(rows.map((r) => Number(r.id)));
-    if (orderedIds.some((id) => !valid.has(id))) {
+    // Bắt buộc danh sách ĐẦY ĐỦ + đúng nhóm (thiếu phần tử sẽ làm thứ tự lai tạp)
+    if (
+      orderedIds.length !== rows.length ||
+      orderedIds.some((id) => !valid.has(id))
+    ) {
       return NextResponse.json(
-        { error: "Danh sách sắp xếp có hạng mục không thuộc dự án/nhóm này." },
+        { error: "Danh sách sắp xếp không khớp các hạng mục trong nhóm này." },
         { status: 400 }
       );
     }
 
-    for (let i = 0; i < orderedIds.length; i++) {
-      await sql`
-        UPDATE backlog_items SET sort_order = ${i}, updated_at = now()
-        WHERE id = ${orderedIds[i]} AND project_id = ${projectId} AND bucket = ${bucket}
-      `;
-    }
+    // 1 lệnh UPDATE duy nhất (nguyên tử, 1 roundtrip DB) thay cho N lệnh trong vòng lặp
+    await sql`
+      UPDATE backlog_items b
+      SET sort_order = x.ord - 1, updated_at = now()
+      FROM (
+        SELECT unnest(${orderedIds}::int[]) AS id,
+               generate_subscripts(${orderedIds}::int[], 1) AS ord
+      ) x
+      WHERE b.id = x.id AND b.project_id = ${projectId} AND b.bucket = ${bucket}
+    `;
     return NextResponse.json({ ok: true });
   } catch (e) {
     return serverError(e);

@@ -78,12 +78,24 @@ export async function PUT(request, { params }) {
       }
     }
 
+    // Đổi nhóm (bucket) qua form Sửa -> xếp xuống CUỐI nhóm mới (giống PATCH),
+    // tránh mang sort_order của nhóm cũ sang làm loạn thứ tự nhóm mới.
+    let sortOrder = item.sort_order;
+    if (bucket !== item.bucket) {
+      const orderRows = await sql`
+        SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
+        FROM backlog_items
+        WHERE project_id = ${item.project_id} AND bucket = ${bucket}
+      `;
+      sortOrder = Number(orderRows[0]?.next_order || 0);
+    }
     const rows = await sql`
       UPDATE backlog_items
       SET title = ${title.slice(0, 200)}, user_story = ${userStory},
           acceptance_criteria = ${acceptanceCriteria}, note = ${note},
           business_value = ${businessValue}, effort = ${effort},
           bucket = ${bucket}, status = ${status}, phase_id = ${phaseId},
+          sort_order = ${sortOrder},
           updated_at = now()
       WHERE id = ${id}
       RETURNING *
@@ -180,7 +192,9 @@ export async function DELETE(_request, { params }) {
         { status: 404 }
       );
     }
+    // Xóa TRƯỚC, ghi log SAU — để lịch sử không ghi nhận "đã xóa" khi lệnh xóa lỗi
     const proj = await sql`SELECT name FROM projects WHERE id = ${item.project_id}`;
+    await sql`DELETE FROM backlog_items WHERE id = ${id}`;
     await logActivity({
       userId: auth.id,
       projectId: item.project_id,
@@ -188,7 +202,6 @@ export async function DELETE(_request, { params }) {
       taskLabel: item.title,
       action: "po_backlog_delete",
     });
-    await sql`DELETE FROM backlog_items WHERE id = ${id}`;
     return NextResponse.json({ ok: true });
   } catch (e) {
     return serverError(e);

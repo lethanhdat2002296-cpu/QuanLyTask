@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   TASK_STATUSES,
   DEFAULT_STATUS,
@@ -8,7 +8,19 @@ import {
   DEFAULT_PRIORITY,
 } from "@/lib/constants";
 
-// Gợi ý tiêu đề ngắn từ dòng đầu của nội dung (cho task cũ chưa có tiêu đề)
+// Đóng modal bằng phím Esc
+function useEscClose(onClose) {
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+}
+
+// Gợi ý tiêu đề ngắn từ dòng đầu của nội dung (cho task cũ chưa có tiêu đề).
+// Chỉ bỏ ký hiệu đầu dòng dạng "- ", "1. " — không ăn mất số có nghĩa.
 function firstLine(text) {
   if (!text) return "";
   const line =
@@ -16,7 +28,7 @@ function firstLine(text) {
       .split("\n")
       .map((l) => l.trim())
       .find((l) => l.length > 0) || "";
-  const cleaned = line.replace(/^[-•*\d.\s)]+/, "").trim();
+  const cleaned = line.replace(/^(?:[-•*]|\d{1,3}[.)])\s+/, "").trim();
   return (cleaned || line).slice(0, 90);
 }
 
@@ -37,6 +49,7 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [aiHint, setAiHint] = useState("");
+  useEscClose(onClose);
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -105,6 +118,8 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
         return;
       }
       onSaved();
+    } catch {
+      setError("Không kết nối được máy chủ, thử lại sau.");
     } finally {
       setSaving(false);
     }
@@ -116,29 +131,12 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
         <h2>{isEdit ? "Sửa task" : "Thêm task mới"}</h2>
         {error && <div className="alert">{error}</div>}
         <form onSubmit={submit}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap",
-              marginBottom: 14,
-              padding: "10px 12px",
-              background: "#eef2ff",
-              border: "1px solid #c7d2fe",
-              borderRadius: 10,
-            }}
-          >
+          <div className="ai-box">
             <button
               type="button"
-              className="btn btn-sm"
+              className="btn btn-sm btn-ai"
               onClick={aiSuggest}
               disabled={suggesting || saving}
-              style={{
-                background: "#4f46e5",
-                color: "#fff",
-                borderColor: "#4f46e5",
-              }}
             >
               {suggesting ? "Đang gợi ý..." : "✨ Gợi ý bằng AI"}
             </button>
@@ -194,57 +192,62 @@ export default function TaskModal({ projectId, task, onClose, onSaved }) {
               placeholder="Hướng giải quyết / giải pháp đề xuất"
             />
           </div>
-          <div className="field">
-            <label>Trạng thái</label>
-            <select
-              className="select"
-              value={form.status}
-              onChange={(e) => set("status", e.target.value)}
-            >
-              {TASK_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+          <div className="field-row">
+            <div className="field">
+              <label>Trạng thái</label>
+              <select
+                className="select"
+                value={form.status}
+                onChange={(e) => set("status", e.target.value)}
+              >
+                {TASK_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Mức độ ưu tiên</label>
+              <select
+                className="select"
+                value={form.priority}
+                onChange={(e) => set("priority", Number(e.target.value))}
+              >
+                {PRIORITIES.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="field">
-            <label>Mức độ ưu tiên</label>
-            <select
-              className="select"
-              value={form.priority}
-              onChange={(e) => set("priority", Number(e.target.value))}
-            >
-              {PRIORITIES.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-            {aiHint && (
-              <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>
-                💡 Lý do AI gợi ý: {aiHint}
-              </p>
-            )}
-          </div>
-          <div className="field">
-            <label>Ngày hết hạn</label>
-            <input
-              className="input"
-              type="date"
-              value={form.end_date}
-              onChange={(e) => set("end_date", e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label>Link tài liệu</label>
-            <input
-              className="input"
-              type="url"
-              value={form.doc_link}
-              onChange={(e) => set("doc_link", e.target.value)}
-              placeholder="https://drive.google.com/... (không bắt buộc)"
-            />
+          {aiHint && (
+            <p className="muted" style={{ fontSize: 13, margin: "-6px 0 12px" }}>
+              💡 Lý do AI gợi ý: {aiHint}
+            </p>
+          )}
+          <div className="field-row">
+            <div className="field">
+              <label>Ngày hết hạn</label>
+              <input
+                className="input"
+                type="date"
+                value={form.end_date}
+                onChange={(e) => set("end_date", e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>Link tài liệu</label>
+              <input
+                className="input"
+                type="text"
+                inputMode="url"
+                value={form.doc_link}
+                onChange={(e) => set("doc_link", e.target.value)}
+                placeholder="drive.google.com/..."
+              />
+            </div>
           </div>
           <div className="modal-actions">
             <button type="button" className="btn" onClick={onClose}>

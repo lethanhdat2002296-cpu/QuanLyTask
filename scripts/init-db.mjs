@@ -142,6 +142,7 @@ async function main() {
   `;
   await sql`ALTER TABLE backlog_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0`;
   await sql`ALTER TABLE backlog_items ADD COLUMN IF NOT EXISTS notion_page_id TEXT`;
+  await sql`ALTER TABLE backlog_items ADD COLUMN IF NOT EXISTS task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL`;
   await sql`CREATE INDEX IF NOT EXISTS idx_backlog_project ON backlog_items(project_id)`;
 
   console.log(

@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import {
   BACKLOG_BUCKETS,
   BACKLOG_STATUSES,
   BACKLOG_STATUS_COLORS,
   PHASE_STATUS_COLORS,
 } from "@/lib/constants";
+import { fetchProjectsCached } from "@/lib/clientCache";
 
 function StatCard({ icon, iconBg, num, label, color }) {
   return (
@@ -74,19 +76,17 @@ export default function PoDashboardPage() {
   const [analyzeErr, setAnalyzeErr] = useState("");
 
   useEffect(() => {
-    fetch("/api/projects")
-      .then(async (pRes) => {
-        if (pRes.status === 401) {
-          router.replace("/login");
-          return;
-        }
-        const p = await pRes.json();
+    fetchProjectsCached()
+      .then((p) => {
         const ps = p.projects || [];
         setProjects(ps);
         if (ps[0]) setProjectF(String(ps[0].id));
+        else setLoading(false);
       })
-      .catch(() => setError("Không tải được số liệu"))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        setError("Không tải được số liệu");
+        setLoading(false);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -173,7 +173,7 @@ export default function PoDashboardPage() {
       {error && <div className="alert">{error}</div>}
 
       {loading ? (
-        <p className="muted">Đang tải...</p>
+        <Skeleton />
       ) : projects.length === 0 ? (
         <div className="empty-state">
           <p style={{ fontSize: 40, margin: 0 }}>🗂️</p>

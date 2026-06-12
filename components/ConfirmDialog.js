@@ -19,6 +19,16 @@ export default function ConfirmDialog({
     if (open) setTyped("");
   }, [open, requireText]);
 
+  // Đóng bằng phím Esc khi đang mở
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e) {
+      if (e.key === "Escape") onCancel();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onCancel]);
+
   if (!open) return null;
 
   const needsText = Boolean(requireText);

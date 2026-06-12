@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { invalidateProjectsCache } from "@/lib/clientCache";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -59,6 +61,7 @@ export default function ProjectsPage() {
       setName("");
       setDescription("");
       setShowForm(false);
+      invalidateProjectsCache();
       load();
     } finally {
       setSaving(false);
@@ -68,6 +71,7 @@ export default function ProjectsPage() {
   async function deleteProject(id) {
     await fetch(`/api/projects/${id}`, { method: "DELETE" });
     setDeleteProjectTarget(null);
+    invalidateProjectsCache();
     load();
   }
 
@@ -90,7 +94,7 @@ export default function ProjectsPage() {
       {error && <div className="alert">{error}</div>}
 
       {loading ? (
-        <p className="muted">Đang tải...</p>
+        <Skeleton />
       ) : projects.length === 0 ? (
         <div className="empty-state">
           <p style={{ fontSize: 40, margin: 0 }}>🗂️</p>

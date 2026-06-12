@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import { STATUS_COLORS } from "@/lib/constants";
 
 function StatCard({ icon, iconBg, num, label, color }) {
@@ -61,7 +62,7 @@ export default function DashboardPage() {
       {error && <div className="alert">{error}</div>}
 
       {loading || !stats ? (
-        <p className="muted">Đang tải...</p>
+        <Skeleton />
       ) : (
         <>
           <div className="stat-grid" style={{ marginBottom: 20 }}>

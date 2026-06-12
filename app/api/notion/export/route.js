@@ -3,6 +3,12 @@ import { getAuth } from "@/lib/auth";
 import { sql, ensureSchema } from "@/lib/db";
 import { serverError } from "@/lib/api";
 import { upsertNotionExportPage, isNotionConfigured } from "@/lib/notion";
+import {
+  PRIORITY_LABELS,
+  VALUE_LABELS,
+  EFFORT_LABELS,
+  BUCKET_LABELS,
+} from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +17,7 @@ function sectionsFromTask(row) {
   return [
     { title: "Dự án", body: row.project_name },
     { title: "Trạng thái", body: row.status },
-    { title: "Ưu tiên", body: String(row.priority || "") },
+    { title: "Ưu tiên", body: PRIORITY_LABELS[row.priority] || String(row.priority || "") },
     { title: "Nội dung khách hàng", body: row.customer_task },
     { title: "Câu hỏi", body: row.question },
     { title: "Khách trả lời", body: row.customer_answer },
@@ -25,10 +31,10 @@ function sectionsFromBacklog(row) {
   return [
     { title: "Dự án", body: row.project_name },
     { title: "Giai đoạn", body: row.phase_name || "" },
-    { title: "Nhóm ưu tiên", body: row.bucket },
+    { title: "Nhóm ưu tiên", body: BUCKET_LABELS[row.bucket] || row.bucket },
     { title: "Trạng thái", body: row.status },
-    { title: "Giá trị kinh doanh", body: String(row.business_value || "") },
-    { title: "Công sức", body: String(row.effort || "") },
+    { title: "Giá trị kinh doanh", body: VALUE_LABELS[row.business_value] || String(row.business_value || "") },
+    { title: "Công sức", body: EFFORT_LABELS[row.effort] || String(row.effort || "") },
     { title: "User story", body: row.user_story },
     { title: "Tiêu chí chấp nhận", body: row.acceptance_criteria },
     { title: "Ghi chú", body: row.note },

@@ -17,7 +17,8 @@ function fmtDate(v) {
   return isNaN(d.getTime()) ? s : d.toLocaleDateString("vi-VN");
 }
 
-// Tiêu đề ngắn từ dòng đầu nội dung (cho task cũ chưa có cột title)
+// Tiêu đề ngắn từ dòng đầu nội dung (cho task cũ chưa có cột title).
+// Chỉ bỏ ký hiệu đầu dòng dạng "- ", "1. " — không ăn mất số có nghĩa.
 function firstLine(text) {
   if (!text) return "";
   const line =
@@ -25,7 +26,7 @@ function firstLine(text) {
       .split("\n")
       .map((l) => l.trim())
       .find((l) => l.length > 0) || "";
-  const cleaned = line.replace(/^[-•*\d.\s)]+/, "").trim();
+  const cleaned = line.replace(/^(?:[-•*]|\d{1,3}[.)])\s+/, "").trim();
   return (cleaned || line).slice(0, 100);
 }
 
@@ -70,7 +71,7 @@ export default function TaskCard({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span className="task-chevron">{open ? "▾" : "▸"}</span>
+        <span className="task-chevron">▸</span>
         {showProject && task.project_name && (
           <span className="pill task-project">🗂️ {task.project_name}</span>
         )}

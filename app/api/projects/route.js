@@ -52,7 +52,7 @@ export async function POST(request) {
     if (!auth) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
-    const { name, description } = await request.json();
+    const { name, description } = await request.json().catch(() => ({}));
     if (!name || !name.trim()) {
       return NextResponse.json(
         { error: "Vui lòng nhập tên dự án" },

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import BacklogModal from "@/components/BacklogModal";
 import {
   BUCKET_COLORS,
@@ -10,6 +11,7 @@ import {
   VALUE_LABELS,
   EFFORT_LABELS,
 } from "@/lib/constants";
+import { fetchProjectsCached } from "@/lib/clientCache";
 
 // Khung vẽ
 const PX0 = 78, PX1 = 432, PY0 = 26, PY1 = 326;
@@ -52,8 +54,7 @@ export default function MatrixPage() {
   }
 
   useEffect(() => {
-    fetch("/api/projects")
-      .then((r) => (r.ok ? r.json() : { projects: [] }))
+    fetchProjectsCached()
       .then((d) => setProjects(d.projects || []))
       .catch(() => {});
   }, []);
@@ -143,7 +144,7 @@ export default function MatrixPage() {
       </div>
 
       {loading ? (
-        <p className="muted">Đang tải...</p>
+        <Skeleton />
       ) : dots.length === 0 ? (
         <div className="empty-state">
           <p style={{ fontSize: 40, margin: 0 }}>🎯</p>

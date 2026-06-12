@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import TaskModal from "@/components/TaskModal";
 import TaskCard from "@/components/TaskCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { TASK_STATUSES } from "@/lib/constants";
+import { invalidateProjectsCache } from "@/lib/clientCache";
+import { TASK_STATUSES, STATUS_COLORS } from "@/lib/constants";
 
 export default function ProjectDetailPage({ params }) {
   const router = useRouter();
@@ -141,6 +143,7 @@ export default function ProjectDetailPage({ params }) {
       setProject(data.project);
       setRefDocs(data.project?.reference_docs || "");
       setEditingProject(false);
+      invalidateProjectsCache();
     } finally {
       setSavingProject(false);
     }
@@ -191,18 +194,10 @@ export default function ProjectDetailPage({ params }) {
 
         {error && <div className="alert">{error}</div>}
         {notice && (
-          <div
-            className="alert"
-            style={{ background: "#f0fdf4", color: "#166534", borderColor: "#bbf7d0" }}
-          >
+          <div className="alert-success">
             {notice.text}
             {notice.url && (
-              <a
-                href={notice.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ marginLeft: 10, fontWeight: 600, color: "#166534" }}
-              >
+              <a href={notice.url} target="_blank" rel="noopener noreferrer">
                 Mở Notion ↗
               </a>
             )}
@@ -210,7 +205,7 @@ export default function ProjectDetailPage({ params }) {
         )}
 
         {loading ? (
-          <p className="muted">Đang tải...</p>
+          <Skeleton />
         ) : project ? (
           <>
             <div className="row-between" style={{ marginBottom: 18 }}>
@@ -286,22 +281,36 @@ export default function ProjectDetailPage({ params }) {
               )}
             </div>
 
-            <div className="row-between" style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className="muted">Lọc trạng thái:</span>
-                <select
-                  className="select"
-                  style={{ width: "auto" }}
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                >
-                  <option>Tất cả</option>
-                  {TASK_STATUSES.map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <span className="muted">{visibleTasks.length} task</span>
+            {/* Chips đếm theo trạng thái — bấm để lọc nhanh */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                marginBottom: 16,
+                alignItems: "center",
+              }}
+            >
+              <button
+                className={"status-chip" + (filter === "Tất cả" ? " active" : "")}
+                style={{ "--chip": "#475569" }}
+                onClick={() => setFilter("Tất cả")}
+              >
+                Tất cả <b>{tasks.length}</b>
+              </button>
+              {TASK_STATUSES.map((s) => {
+                const n = tasks.filter((t) => t.status === s).length;
+                return (
+                  <button
+                    key={s}
+                    className={"status-chip" + (filter === s ? " active" : "")}
+                    style={{ "--chip": STATUS_COLORS[s] || "#6b7280" }}
+                    onClick={() => setFilter(filter === s ? "Tất cả" : s)}
+                  >
+                    {s} <b>{n}</b>
+                  </button>
+                );
+              })}
             </div>
 
             {visibleTasks.length === 0 ? (

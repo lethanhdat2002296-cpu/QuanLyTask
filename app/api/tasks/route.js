@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
-import { serverError } from "@/lib/api";
+import { serverError, escapeLike } from "@/lib/api";
 import { TASK_STATUSES } from "@/lib/constants";
 
 export const runtime = "nodejs";
@@ -26,7 +26,7 @@ export async function GET(request) {
     const overdueOnly = sp.get("overdue") === "1";
     const sort = sp.get("sort") || "default";
     const qRaw = (sp.get("q") || "").trim();
-    const like = qRaw ? "%" + qRaw + "%" : null;
+    const like = qRaw ? "%" + escapeLike(qRaw) + "%" : null;
 
     const rows = await sql`
       SELECT

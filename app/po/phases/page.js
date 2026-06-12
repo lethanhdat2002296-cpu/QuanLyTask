@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import PhaseModal from "@/components/PhaseModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { PHASE_STATUSES, PHASE_STATUS_COLORS } from "@/lib/constants";
+import { fetchProjectsCached } from "@/lib/clientCache";
 
 function fmtDate(v) {
   if (!v) return "";
@@ -26,16 +28,8 @@ export default function PhasesPage() {
   const [deletePhaseTarget, setDeletePhaseTarget] = useState(null);
 
   useEffect(() => {
-    fetch("/api/projects")
-      .then((r) => {
-        if (r.status === 401) {
-          router.replace("/login");
-          return null;
-        }
-        return r.json();
-      })
+    fetchProjectsCached()
       .then((d) => {
-        if (!d) return;
         const ps = d.projects || [];
         setProjects(ps);
         if (ps[0]) setProjectF(String(ps[0].id));
@@ -147,7 +141,7 @@ export default function PhasesPage() {
           </div>
 
           {loading ? (
-            <p className="muted">Đang tải...</p>
+            <Skeleton />
           ) : phases.length === 0 ? (
             <div className="empty-state">
               <p style={{ fontSize: 40, margin: 0 }}>🗺️</p>

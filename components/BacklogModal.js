@@ -38,6 +38,16 @@ export default function BacklogModal({
   const [suggesting, setSuggesting] = useState(false);
   const [aiHint, setAiHint] = useState("");
 
+  // Đóng modal bằng phím Esc
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
@@ -132,6 +142,8 @@ export default function BacklogModal({
         return;
       }
       onSaved();
+    } catch {
+      setError("Không kết nối được máy chủ, thử lại sau.");
     } finally {
       setSaving(false);
     }
@@ -163,29 +175,12 @@ export default function BacklogModal({
             </select>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap",
-              marginBottom: 14,
-              padding: "10px 12px",
-              background: "#eef2ff",
-              border: "1px solid #c7d2fe",
-              borderRadius: 10,
-            }}
-          >
+          <div className="ai-box">
             <button
               type="button"
-              className="btn btn-sm"
+              className="btn btn-sm btn-ai"
               onClick={aiSuggest}
               disabled={suggesting || saving}
-              style={{
-                background: "#4f46e5",
-                color: "#fff",
-                borderColor: "#4f46e5",
-              }}
             >
               {suggesting ? "Đang gợi ý..." : "✨ AI viết User story & Tiêu chí"}
             </button>
@@ -224,66 +219,70 @@ export default function BacklogModal({
               placeholder={"VD:\n- Khi chọn khoảng ngày thì hiển thị đúng tổng số serial\n- Khi không có dữ liệu thì hiển thị 0"}
             />
           </div>
-          <div className="field">
-            <label>Giá trị kinh doanh</label>
-            <select
-              className="select"
-              value={form.business_value}
-              onChange={(e) => set("business_value", Number(e.target.value))}
-            >
-              {[1, 2, 3].map((v) => (
-                <option key={v} value={v}>
-                  {VALUE_LABELS[v]}
-                </option>
-              ))}
-            </select>
-            {aiHint && (
-              <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>
-                💡 Lý do AI chấm giá trị: {aiHint}
-              </p>
-            )}
+          <div className="field-row">
+            <div className="field">
+              <label>Giá trị kinh doanh</label>
+              <select
+                className="select"
+                value={form.business_value}
+                onChange={(e) => set("business_value", Number(e.target.value))}
+              >
+                {[1, 2, 3].map((v) => (
+                  <option key={v} value={v}>
+                    {VALUE_LABELS[v]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Công sức ước lượng</label>
+              <select
+                className="select"
+                value={form.effort}
+                onChange={(e) => set("effort", Number(e.target.value))}
+              >
+                {[1, 2, 3].map((v) => (
+                  <option key={v} value={v}>
+                    {EFFORT_LABELS[v]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="field">
-            <label>Công sức ước lượng</label>
-            <select
-              className="select"
-              value={form.effort}
-              onChange={(e) => set("effort", Number(e.target.value))}
-            >
-              {[1, 2, 3].map((v) => (
-                <option key={v} value={v}>
-                  {EFFORT_LABELS[v]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>Nhóm ưu tiên (PO)</label>
-            <select
-              className="select"
-              value={form.bucket}
-              onChange={(e) => set("bucket", e.target.value)}
-            >
-              {BACKLOG_BUCKETS.map((b) => (
-                <option key={b.value} value={b.value}>
-                  {b.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>Trạng thái</label>
-            <select
-              className="select"
-              value={form.status}
-              onChange={(e) => set("status", e.target.value)}
-            >
-              {BACKLOG_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+          {aiHint && (
+            <p className="muted" style={{ fontSize: 13, margin: "-6px 0 12px" }}>
+              💡 Lý do AI chấm giá trị: {aiHint}
+            </p>
+          )}
+          <div className="field-row">
+            <div className="field">
+              <label>Nhóm ưu tiên (PO)</label>
+              <select
+                className="select"
+                value={form.bucket}
+                onChange={(e) => set("bucket", e.target.value)}
+              >
+                {BACKLOG_BUCKETS.map((b) => (
+                  <option key={b.value} value={b.value}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Trạng thái</label>
+              <select
+                className="select"
+                value={form.status}
+                onChange={(e) => set("status", e.target.value)}
+              >
+                {BACKLOG_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="field">
             <label>Giai đoạn phát triển</label>

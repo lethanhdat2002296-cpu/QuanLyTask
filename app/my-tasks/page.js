@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import TaskCard from "@/components/TaskCard";
 import TaskModal from "@/components/TaskModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { TASK_STATUSES } from "@/lib/constants";
+import { fetchProjectsCached } from "@/lib/clientCache";
 
 export default function MyTasksPage() {
   const router = useRouter();
@@ -58,11 +60,10 @@ export default function MyTasksPage() {
   }
 
   async function loadProjects() {
-    const res = await fetch("/api/projects");
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await fetchProjectsCached();
       setProjects(data.projects || []);
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -137,18 +138,10 @@ export default function MyTasksPage() {
 
         {error && <div className="alert">{error}</div>}
         {notice && (
-          <div
-            className="alert"
-            style={{ background: "#f0fdf4", color: "#166534", borderColor: "#bbf7d0" }}
-          >
+          <div className="alert-success">
             {notice.text}
             {notice.url && (
-              <a
-                href={notice.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ marginLeft: 10, fontWeight: 600, color: "#166534" }}
-              >
+              <a href={notice.url} target="_blank" rel="noopener noreferrer">
                 Mở Notion ↗
               </a>
             )}
@@ -237,7 +230,7 @@ export default function MyTasksPage() {
         </div>
 
         {loading ? (
-          <p className="muted">Đang tải...</p>
+          <Skeleton />
         ) : tasks.length === 0 ? (
           <div className="empty-state">
             <p style={{ fontSize: 40, margin: 0 }}>🎉</p>

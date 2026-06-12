@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessProject, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
-import { serverError } from "@/lib/api";
+import { serverError, escapeLike } from "@/lib/api";
 import {
   BACKLOG_BUCKETS,
   BACKLOG_STATUSES,
@@ -30,14 +30,14 @@ export async function GET(request) {
     const statusRaw = sp.get("status");
     const status = BACKLOG_STATUSES.includes(statusRaw) ? statusRaw : null;
     const qRaw = (sp.get("q") || "").trim();
-    const like = qRaw ? "%" + qRaw + "%" : null;
+    const like = qRaw ? "%" + escapeLike(qRaw) + "%" : null;
 
     const items = await sql`
       SELECT b.id, b.project_id, p.name AS project_name,
              b.phase_id, ph.name AS phase_name,
              b.title, b.user_story, b.acceptance_criteria,
              b.business_value, b.effort, b.bucket, b.status, b.sort_order, b.note,
-             b.created_at, b.updated_at
+             b.task_id, b.created_at, b.updated_at
       FROM backlog_items b
       JOIN projects p ON p.id = b.project_id
       LEFT JOIN phases ph ON ph.id = b.phase_id
@@ -49,6 +49,7 @@ export async function GET(request) {
              b.title ILIKE ${like} OR b.user_story ILIKE ${like} OR b.note ILIKE ${like}
         ))
       ORDER BY CASE b.bucket WHEN 'now' THEN 1 WHEN 'next' THEN 2 ELSE 3 END,
+               b.project_id ASC,
                b.sort_order ASC, b.business_value ASC, b.effort ASC, b.created_at DESC
     `;
     return NextResponse.json({ items, isAdmin: auth.isAdmin });

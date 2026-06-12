@@ -15,6 +15,9 @@ export async function GET(_request, { params }) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const id = Number(params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
+    }
     const rows = auth.isAdmin
       ? await sql`SELECT * FROM projects WHERE id = ${id}`
       : await sql`SELECT * FROM projects WHERE id = ${id} AND user_id = ${auth.id}`;
@@ -36,7 +39,12 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const id = Number(params.id);
-    const { name, description, reference_docs } = await request.json();
+    if (!Number.isInteger(id) || id <= 0) {
+      return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
+    }
+    const { name, description, reference_docs } = await request
+      .json()
+      .catch(() => ({}));
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Vui lòng nhập tên dự án" }, { status: 400 });
     }
@@ -72,6 +80,9 @@ export async function DELETE(_request, { params }) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const id = Number(params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return NextResponse.json({ error: "Không tìm thấy dự án" }, { status: 404 });
+    }
     const rows = auth.isAdmin
       ? await sql`DELETE FROM projects WHERE id = ${id} RETURNING id`
       : await sql`DELETE FROM projects WHERE id = ${id} AND user_id = ${auth.id} RETURNING id`;

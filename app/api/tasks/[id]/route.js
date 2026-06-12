@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema, canAccessTask, logActivity } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
-import { serverError, normalizeLink, normalizeDate } from "@/lib/api";
-import { DEFAULT_STATUS, TASK_STATUSES, DEFAULT_PRIORITY } from "@/lib/constants";
+import {
+  serverError,
+  normalizeLink,
+  normalizeDate,
+  isInvalidDateInput,
+} from "@/lib/api";
+import { TASK_STATUSES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Lấy thông tin task hiện tại (trước khi sửa) để ghi nhật ký
+// Lấy task hiện tại (trước khi sửa) — đủ field để vừa ghi nhật ký
+// vừa giữ nguyên giá trị cũ cho những field không được gửi lên.
 async function taskBefore(id) {
   const rows = await sql`
-    SELECT t.status, t.project_id, t.title, t.customer_task, p.name AS project_name
+    SELECT t.*, t.end_date::text AS end_date, p.name AS project_name
     FROM tasks t JOIN projects p ON p.id = t.project_id
     WHERE t.id = ${id}
   `;
@@ -29,18 +35,40 @@ export async function PUT(request, { params }) {
     if (!(await canAccessTask(id, auth))) {
       return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
     }
-    const body = await request.json();
-    const title = (body.title ?? "").trim();
-    const customer_task = (body.customer_task ?? "").trim();
-    const question = body.question ?? "";
-    const customer_answer = body.customer_answer ?? "";
-    const solution = body.solution ?? "";
-    const end_date = normalizeDate(body.end_date);
-    const doc_link = normalizeLink(body.doc_link);
-    let status = body.status || DEFAULT_STATUS;
-    if (!TASK_STATUSES.includes(status)) status = DEFAULT_STATUS;
-    let priority = Number(body.priority);
-    if (![1, 2, 3].includes(priority)) priority = DEFAULT_PRIORITY;
+    const before = await taskBefore(id);
+    if (!before) {
+      return NextResponse.json({ error: "Không tìm thấy task" }, { status: 404 });
+    }
+    const body = await request.json().catch(() => ({}));
+    // Field không gửi lên -> giữ nguyên giá trị cũ (tránh ghi đè rỗng/mặc định)
+    const title = String(body.title ?? before.title).trim();
+    const customer_task =
+      body.customer_task === undefined
+        ? before.customer_task
+        : String(body.customer_task || "").trim();
+    const question =
+      body.question === undefined ? before.question : String(body.question || "");
+    const customer_answer =
+      body.customer_answer === undefined
+        ? before.customer_answer
+        : String(body.customer_answer || "");
+    const solution =
+      body.solution === undefined ? before.solution : String(body.solution || "");
+    // Ngày gõ sai định dạng -> báo lỗi thay vì lặng lẽ xóa deadline
+    if (body.end_date !== undefined && isInvalidDateInput(body.end_date)) {
+      return NextResponse.json(
+        { error: "Ngày hết hạn không hợp lệ (định dạng YYYY-MM-DD)" },
+        { status: 400 }
+      );
+    }
+    const end_date =
+      body.end_date === undefined ? before.end_date : normalizeDate(body.end_date);
+    const doc_link =
+      body.doc_link === undefined ? before.doc_link : normalizeLink(body.doc_link);
+    const status = TASK_STATUSES.includes(body.status) ? body.status : before.status;
+    const priority = [1, 2, 3].includes(Number(body.priority))
+      ? Number(body.priority)
+      : before.priority;
 
     if (!title) {
       return NextResponse.json(
@@ -48,8 +76,6 @@ export async function PUT(request, { params }) {
         { status: 400 }
       );
     }
-
-    const before = await taskBefore(id);
     const rows = await sql`
       UPDATE tasks
       SET title = ${title},

@@ -43,6 +43,7 @@ export default function BacklogCard({
   onStatusChange,
   onMove,
   onExportNotion,
+  onToTask,
   canMoveUp = false,
   canMoveDown = false,
   showProject = false,
@@ -59,7 +60,7 @@ export default function BacklogCard({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span className="task-chevron">{open ? "▾" : "▸"}</span>
+        <span className="task-chevron">▸</span>
         {showProject && item.project_name && (
           <span className="pill task-project">🗂️ {item.project_name}</span>
         )}
@@ -89,6 +90,11 @@ export default function BacklogCard({
             <span className="pill">🔧 Công sức: {effortLabel}</span>
             {item.phase_name && (
               <span className="pill">🗺️ Giai đoạn: {item.phase_name}</span>
+            )}
+            {item.task_id && (
+              <span className="pill pill-done" title="Hạng mục đã được chuyển thành task thực thi bên chế độ BA">
+                🔗 Đã có task BA #{item.task_id}
+              </span>
             )}
           </div>
 
@@ -160,6 +166,15 @@ export default function BacklogCard({
                   ↓
                 </button>
               </>
+            )}
+            {onToTask && !item.task_id && (
+              <button
+                className="btn btn-sm"
+                onClick={() => onToTask(item)}
+                title="Tạo task thực thi bên chế độ BA từ hạng mục này (nối PO → BA)"
+              >
+                → Tạo task BA
+              </button>
             )}
             {onExportNotion && (
               <button className="btn btn-sm" onClick={() => onExportNotion(item)}>

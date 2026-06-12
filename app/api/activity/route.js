@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
-import { serverError } from "@/lib/api";
+import { serverError, normalizeDate } from "@/lib/api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,8 +16,8 @@ export async function GET(request) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
     const sp = new URL(request.url).searchParams;
-    const from = sp.get("from") || null;
-    const to = sp.get("to") || null;
+    const from = normalizeDate(sp.get("from"));
+    const to = normalizeDate(sp.get("to"));
     const projectId = Number(sp.get("project")) || null;
     const action = sp.get("action") || null;
 

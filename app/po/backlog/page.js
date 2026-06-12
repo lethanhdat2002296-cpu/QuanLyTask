@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Skeleton from "@/components/Skeleton";
 import BacklogCard from "@/components/BacklogCard";
 import BacklogModal from "@/components/BacklogModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { BACKLOG_BUCKETS, BACKLOG_STATUSES } from "@/lib/constants";
+import { fetchProjectsCached } from "@/lib/clientCache";
 
 export default function BacklogPage() {
   const router = useRouter();
@@ -53,11 +55,10 @@ export default function BacklogPage() {
   }
 
   async function loadProjects() {
-    const res = await fetch("/api/projects");
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await fetchProjectsCached();
       setProjects(data.projects || []);
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -109,6 +110,22 @@ export default function BacklogPage() {
       text: data.updated ? "Đã cập nhật trên Notion ✓" : "Đã tạo trên Notion ✓",
       url: data.url,
     });
+  }
+  async function toTask(item) {
+    setError("");
+    setNotice(null);
+    const res = await fetch(`/api/po/backlog/${item.id}/to-task`, {
+      method: "POST",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Không tạo được task BA");
+      return;
+    }
+    setNotice({
+      text: `Đã tạo task BA từ hạng mục "${item.title}" ✓ (mở chế độ BA → dự án để xem)`,
+    });
+    load();
   }
   async function moveItem(item, dir) {
     const sameBucket = items.filter((i) => i.bucket === item.bucket);
@@ -172,18 +189,10 @@ export default function BacklogPage() {
 
       {error && <div className="alert">{error}</div>}
       {notice && (
-        <div
-          className="alert"
-          style={{ background: "#f0fdf4", color: "#166534", borderColor: "#bbf7d0" }}
-        >
+        <div className="alert-success">
           {notice.text}
           {notice.url && (
-            <a
-              href={notice.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ marginLeft: 10, fontWeight: 600, color: "#166534" }}
-            >
+            <a href={notice.url} target="_blank" rel="noopener noreferrer">
               Mở Notion ↗
             </a>
           )}
@@ -253,7 +262,7 @@ export default function BacklogPage() {
       </div>
 
       {loading ? (
-        <p className="muted">Đang tải...</p>
+        <Skeleton />
       ) : items.length === 0 ? (
         <div className="empty-state">
           <p style={{ fontSize: 40, margin: 0 }}>📦</p>
@@ -292,7 +301,8 @@ export default function BacklogPage() {
                 onDelete={setDeleteItemTarget}
                 onBucketChange={changeBucket}
                 onStatusChange={changeStatus}
-                onMove={moveItem}
+                onMove={showProject ? undefined : moveItem}
+                onToTask={toTask}
                 onExportNotion={exportNotion}
                 canMoveUp={g.items.findIndex((x) => x.id === i.id) > 0}
                 canMoveDown={g.items.findIndex((x) => x.id === i.id) < g.items.length - 1}
@@ -310,7 +320,8 @@ export default function BacklogPage() {
             onDelete={setDeleteItemTarget}
             onBucketChange={changeBucket}
             onStatusChange={changeStatus}
-            onMove={moveItem}
+            onMove={showProject ? undefined : moveItem}
+            onToTask={toTask}
             onExportNotion={exportNotion}
             canMoveUp={items.filter((x) => x.bucket === i.bucket).findIndex((x) => x.id === i.id) > 0}
             canMoveDown={items.filter((x) => x.bucket === i.bucket).findIndex((x) => x.id === i.id) < items.filter((x) => x.bucket === i.bucket).length - 1}
